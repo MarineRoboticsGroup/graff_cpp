@@ -1,4 +1,5 @@
 
+set (CMAKE_CXX_STANDARD 11)
 # https://stackoverflow.com/questions/41251474/how-to-import-zeromq-libraries-in-cmake#41252437
 find_package(PkgConfig)
 ## use pkg-config to get hints for 0mq locations

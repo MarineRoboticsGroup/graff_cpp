@@ -11,6 +11,25 @@ using nlohmann::json;
 
 const double PI = 3.141592653589793238463;
 
+struct GraffConfig {
+  std::string userId;
+  std::string robotId;
+  std::string sessionId;
+};
+
+std::string getStatus(const GraffConfig &cfg) {
+  std::cout << "here: " << cfg.sessionId <<std::endl;
+
+  json request;
+  request["userId"] = cfg.userId;
+  request["robotId"] = cfg.robotId;
+  request["sessionId"] = cfg.sessionId;
+  request["type"] = "getStatus";
+  std::string request_str = request.dump(2); // serialize
+  return request_str;
+}
+
+
 int main(int argCount, char **argValues) {
   //  Prepare our context and socket
   zmq::context_t context(1);
@@ -21,6 +40,19 @@ int main(int argCount, char **argValues) {
 
   std::string robot_id = "FeitorBot";
   std::string session_id = "FeitorBotTestSession001";
+
+  GraffConfig gff;
+  gff.userId = "Pedro";
+  gff.robotId = "PedroBot";
+  gff.sessionId = "ThisIsACTest001";
+
+  std::string stsr = getStatus(gff);
+
+  zmq::message_t msg(stsr.length());
+  memcpy(msg.data(), stsr.c_str(), stsr.length());
+  socket.send(msg);
+
+  std::cout << "Asked for status" << std::endl;
 
   for (int i = 0; i < 6; ++i) {
     // create request
