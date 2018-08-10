@@ -11,6 +11,40 @@ using nlohmann::json;
 
 const double PI = 3.141592653589793238463;
 
+int registerRobot(zmq::socket_t &socket, const std::string &robot_id) {
+  json request;
+  request["type"] = "RegisterRobot";
+  request["robot_id"] = robot_id;
+  std::string request_str = request.dump(2); // serialize
+
+  zmq::message_t msg(request_str.length());
+  memcpy(msg.data(), request_str.c_str(), request_str.length());
+  socket.send(msg);
+
+  zmq::message_t reply;
+  if (socket.recv(&reply) < 0) {
+    return(-1);
+  };
+  return(0);
+}
+
+int registerSession(zmq::socket_t &socket, const std::string &session_id) {
+  json request;
+  request["type"] = "RegisterSession";
+  request["session_id"] = session_id;
+  std::string request_str = request.dump(2); // serialize
+
+  zmq::message_t msg(request_str.length());
+  memcpy(msg.data(), request_str.c_str(), request_str.length());
+  socket.send(msg);
+
+  zmq::message_t reply;
+  if (socket.recv(&reply) < 0) {
+    return(-1);
+  };
+  return(0);
+}
+
 int main(int argCount, char **argValues) {
   //  Prepare our context and socket
   zmq::context_t context(1);
@@ -19,8 +53,18 @@ int main(int argCount, char **argValues) {
   std::cout << "Connecting to navi server…" << std::endl;
   socket.connect("tcp://localhost:5555");
 
-  std::string robot_id = "FeitorBot";
-  std::string session_id = "FeitorBotTestSession001";
+  std::string robot_id = "Hexagonal";
+  std::string session_id = "cjz001";
+
+  if (registerRobot(socket, robot_id)) {
+    std::cerr << "Failed to register robot!\n";
+    return (-1);
+  }
+
+  if (registerSession(socket, session_id)) {
+    std::cerr << "Failed to register session!\n";
+    return (-1);
+  }
 
   for (int i = 0; i < 6; ++i) {
     // create request
@@ -42,7 +86,7 @@ int main(int argCount, char **argValues) {
     // wait for reply
     zmq::message_t reply;
     if (socket.recv(&reply) < 0) {
-      std::cerr << "something went wrong :(";
+      std::cerr << "Something went wrong :(";
       break;
     }
     std::string result =
@@ -50,9 +94,10 @@ int main(int argCount, char **argValues) {
     std::cout << result << "\n";
 
     if (result.compare("OK")) {
-      std::cerr << "server is unhappy with request." << "\n";
+      std::cerr << "Server is unhappy with request."
+                << "\n";
       break;
     }
   }
-  return(0);
+  return (0);
 }
