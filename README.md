@@ -4,6 +4,29 @@
 
 A C++ interface to [SynchronySDK](https://github.com/nicrip/SynchronySDK_py) using JSON over ZeroMQ.
 
+Communication with Synchrony is implemented via simple "request-reply"-type functions:
+
+```c++
+json request(zmq::socket_t &socket) {
+  // create request
+  json request;
+  request["type"] = "GetStatus";
+  // fill out the rest of the request here
+
+  // serialize and send request, wait for reply
+  zmq::message_t reply;
+  if (sendRequest(request, socket, reply)) { 
+    return (-1);
+  }
+
+  std::string r = toString(message);
+  json reply = json::parse(r);
+  return (reply);
+}
+```
+
+To ensure compatibility, JSON requests must comply with Synchrony-defined entities ([example](https://github.com/GearsAD/SynchronySDK.jl/blob/master/src/entities/Session.jl)). These are also the reference when parsing replies.
+
 ## Getting Started
 
 ### Dependencies
@@ -41,6 +64,8 @@ TODO
 TODO
 
 ## Contribute
-TODO
+
+Contributions to this interface are welcome! Please fork this repository, add the desired functionality and submit a pull request.
+
 
 
