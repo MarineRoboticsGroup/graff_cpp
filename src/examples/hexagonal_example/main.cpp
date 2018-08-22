@@ -139,6 +139,7 @@ int addLandmark2D(zmq::socket_t &socket, const std::string &robot_id,
 
   return (0);
 }
+
 int addFactor_BearingRangeNormal(zmq::socket_t &socket,
                                  const std::string &robot_id,
                                  const std::string &session_id,
@@ -186,6 +187,43 @@ int setReady(zmq::socket_t &socket, const std::string &robot_id,
   return (0);
 }
 
+json getSession(zmq::socket_t &socket, const std::string &robot_id,
+                const std::string &session_id) {
+  json request;
+  request["type"] = "getSession";
+  request["robot_id"] = robot_id;
+  request["session_id"] = session_id;
+
+  zmq::message_t message;
+  if (sendRequest(request, socket, message)) {
+    return (-1);
+  }
+
+  std::string r = toString(message);
+  json reply = json::parse(r);
+
+  return (reply);
+}
+
+json getNode(zmq::socket_t &socket, const std::string &robot_id,
+             const std::string &session_id, const std::string &node_id) {
+  json request;
+  request["type"] = "getSession";
+  request["robot_id"] = robot_id;
+  request["session_id"] = session_id;
+  request["node_id"] = node_id;
+
+  zmq::message_t message;
+  if (sendRequest(request, socket, message)) {
+    return (-1);
+  }
+
+  std::string r = toString(message);
+  json reply = json::parse(r);
+
+  return (reply);
+}
+
 int main(int argCount, char **argValues) {
   //  Prepare our context and socket
 
@@ -227,11 +265,12 @@ int main(int argCount, char **argValues) {
   addFactor_BearingRangeNormal(socket, robot_id, session_id, "x6", "l1", 0.0,
                                20.0);
 
-  // flag the session as ready for a new
-  // solution
+  // flag the session as ready for a solver
   setReady(socket, robot_id, session_id, true);
 
   // get the session
+  json session = getSession(socket, robot_id, session_id);
+  json x1 = getNode(socket, robot_id, session_id, "x1");
 
   return (0);
 }
