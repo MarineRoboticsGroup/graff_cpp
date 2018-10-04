@@ -167,6 +167,8 @@ int addFactor_BearingRangeNormal(zmq::socket_t &socket,
   return (0);
 }
 
+int addPose3d(zmq::socket_t &socket) {}
+
 int setReady(zmq::socket_t &socket, const std::string &robot_id,
              const std::string &session_id, const bool &ready) {
   json request;
@@ -226,11 +228,10 @@ json getNode(zmq::socket_t &socket, const std::string &robot_id,
 
 int main(int argCount, char **argValues) {
   //  Prepare our context and socket
-
   zmq::context_t context(1);
   zmq::socket_t socket(context, ZMQ_REQ);
 
-  std::cout << "Connecting to navi server…" << std::endl;
+  std::cout << "Connecting to navi endpoint…" << std::endl;
   socket.connect("tcp://localhost:5555");
 
   std::string robot_id = "Hexagonal";

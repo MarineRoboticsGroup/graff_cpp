@@ -33,7 +33,7 @@ To ensure compatibility, JSON requests must comply with Synchrony-defined entiti
 
  * `build-essential`
  * `cmake` (3.0.2+)
- * ZeroMQ - can be obtained using your package manager via `sudo apt install libzmq-dev`
+ * ZeroMQ - can be obtained using your package manager via `sudo apt install libzmq3-dev`
  * Niels Lohmann's [JSON library](https://github.com/nlohmann/json) - taken care of by the `configure.sh` script
 
 ### Build 
