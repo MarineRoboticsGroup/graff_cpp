@@ -6,62 +6,15 @@
 
 #include <zmq.hpp>
 
-#include "json.hpp"
-using json = nlohmann::json;
+#include <graff/graff.hpp>
 
-const double PI = 3.141592653589793238463;
-
-inline std::string toString(const zmq::message_t &reply) {
-  return (std::string(static_cast<const char *>(reply.data()), reply.size()));
-}
-
-// Serialize and send a json request to the socket, then wait for a reply.
-inline int sendRequest(const json &request, zmq::socket_t &socket,
-                       zmq::message_t &reply) {
-  std::string request_str = request.dump(2); // serialize
-  zmq::message_t msg(request_str.length());
-  memcpy(msg.data(), request_str.c_str(), request_str.length());
-  socket.send(msg);
-
-  if (socket.recv(&reply) < 0) {
-    std::cerr << "Something went wrong: " << toString(reply) << "\n";
-    return (-1);
-  }
-  return (0);
-}
-
-inline void printReply(const zmq::message_t &reply) {
-  std::string result =
-      std::string(static_cast<const char *>(reply.data()), reply.size());
-  std::cout << result << "\n";
-}
-
-int getStatus(zmq::socket_t &socket) {
-  // create request
-  json request;
-  request["type"] = "GetStatus";
-
-  // send request
-  zmq::message_t reply;
-  if (sendRequest(request, socket, reply)) {
-    return (-1);
-  }
-
-  // parse reply
-  std::string r = toString(reply);
-  if (r.compare("OK")) {
-    std::cerr << "Server is unhappy with request.\n";
-    return (-1);
-  }
-  return (0);
-}
-
+/*
 int registerRobot(zmq::socket_t &socket, const std::string &id,
                   const std::string &name = "robot",
                   const std::string &description = "my robot",
                   const std::string &status = "aok") {
   json request;
-  request["type"] = "RegisterRobot";
+  request["type"] = "registerRobot";
   request["id"] = id;
   request["name"] = name;
   request["description"] = description;
@@ -75,13 +28,16 @@ int registerRobot(zmq::socket_t &socket, const std::string &id,
   std::string r = toString(message);
   json reply = json::parse(r);
   // do something with the reply here
+  print(reply);
 
   return (0);
 }
+*/
 
+/*
 int registerSession(zmq::socket_t &socket, const std::string &session_id) {
   json request;
-  request["type"] = "RegisterSession";
+  request["type"] = "registerSession";
   request["session_id"] = session_id;
 
   zmq::message_t message;
@@ -92,18 +48,21 @@ int registerSession(zmq::socket_t &socket, const std::string &session_id) {
   std::string r = toString(message);
   json reply = json::parse(r);
   // do something with the reply here
+  print(reply);
 
   return (0);
 }
+*/
 
+/*
 int addOdometry2D(zmq::socket_t &socket, const std::string &robot_id,
                   const std::string &session_id,
                   const std::vector<double> &measurement,
                   const std::vector<std::vector<double>> &covariance) {
   json request;
-  request["robot_id"] = robot_id;
-  request["session_id"] = session_id;
-  request["type"] = "AddOdometry2D";
+  request["robotId"] = robot_id;
+  request["sessionId"] = session_id;
+  request["type"] = "addOdometry2D";
   request["measurement"] = measurement;
   request["covariance"] = covariance;
 
@@ -115,18 +74,21 @@ int addOdometry2D(zmq::socket_t &socket, const std::string &robot_id,
   std::string r = toString(message);
   json reply = json::parse(r);
   // do something with the reply here
+  print(reply);
 
   return (0);
 }
+*/
 
+/*
 int addLandmark2D(zmq::socket_t &socket, const std::string &robot_id,
                   const std::string &session_id,
                   const std::string &landmark_id) {
   json request;
   request["type"] = "addLandmark2D";
-  request["robot_id"] = robot_id;
-  request["session_id"] = session_id;
-  request["landmark_id"] = landmark_id;
+  request["robotId"] = robot_id;
+  request["sessionId"] = session_id;
+  request["landmarkId"] = landmark_id;
 
   zmq::message_t message;
   if (sendRequest(request, socket, message)) {
@@ -136,10 +98,13 @@ int addLandmark2D(zmq::socket_t &socket, const std::string &robot_id,
   std::string r = toString(message);
   json reply = json::parse(r);
   // do something with the reply here
+  print(reply);
 
   return (0);
 }
+*/
 
+/*
 int addFactor_BearingRangeNormal(zmq::socket_t &socket,
                                  const std::string &robot_id,
                                  const std::string &session_id,
@@ -147,7 +112,7 @@ int addFactor_BearingRangeNormal(zmq::socket_t &socket,
                                  const std::string &landmark_id,
                                  const double &bearing, const double &range) {
   json request;
-  request["type"] = "addFactor_BearingRangeNormal";
+  request["type"] = "addFactorBearingRangeNormal";
   request["robot_id"] = robot_id;
   request["session_id"] = session_id;
   request["pose_id"] = pose_id;
@@ -163,10 +128,14 @@ int addFactor_BearingRangeNormal(zmq::socket_t &socket,
   std::string r = toString(message);
   json reply = json::parse(r);
   // do something with the reply here
+  print(reply);
 
   return (0);
 }
+*/
 
+
+/*
 int setReady(zmq::socket_t &socket, const std::string &robot_id,
              const std::string &session_id, const bool &ready) {
   json request;
@@ -183,10 +152,28 @@ int setReady(zmq::socket_t &socket, const std::string &robot_id,
   std::string r = toString(message);
   json reply = json::parse(r);
   // do something with the reply here
-
+  print(reply);
   return (0);
 }
+*/
 
+/*
+void printRobotResponse(const json &response) {
+  std::cout << "id: " << response["id"] << std::endl;
+  std::cout << "name: " << response["name"] << std::endl;
+  std::cout << "description: " << response["description"] << std::endl;
+  std::cout << "status: " << response["status"] << std::endl;
+  std::cout << "createdTimestamp: " << response["createdTimestamp"]
+            << std::endl;
+  std::cout << "lastUpdatedTimestamp: " << response["lastUpdatedTimestamp"]
+            << std::endl;
+  // for(auto it=response["links"].begin(), it!=response["links"].end() ++it){
+  // }
+  // TODO: print links (dict)
+}
+*/
+
+/*
 json getSession(zmq::socket_t &socket, const std::string &robot_id,
                 const std::string &session_id) {
   json request;
@@ -202,9 +189,21 @@ json getSession(zmq::socket_t &socket, const std::string &robot_id,
   std::string r = toString(message);
   json reply = json::parse(r);
 
+  print(reply);
   return (reply);
 }
+*/
 
+// request["nodes"] =....
+// request["type"] = ""
+// request["distribution"] =
+// request["distribution"] =
+// request["distribution"]["mean"]
+// request["distribution"]["covariance"]
+// request["distribution"]["samples"]
+// request["distribution"]["weights"]
+
+/*
 json getNode(zmq::socket_t &socket, const std::string &robot_id,
              const std::string &session_id, const std::string &node_id) {
   json request;
@@ -221,34 +220,67 @@ json getNode(zmq::socket_t &socket, const std::string &robot_id,
   std::string r = toString(message);
   json reply = json::parse(r);
 
+  print(reply);
   return (reply);
 }
+*/
 
 int main(int argCount, char **argValues) {
-  //  Prepare our context and socket
+  // create endpoint
+  graff::Endpoint ep;
 
-  zmq::context_t context(1);
-  zmq::socket_t socket(context, ZMQ_REQ);
+  std::cout << "Connecting to endpoint…" << std::endl;
+  ep.Connect("tcp://128.30.31.88:5555");
 
-  std::cout << "Connecting to navi server…" << std::endl;
-  socket.connect("tcp://localhost:5555");
+  graff::Robot robot("krakenoid");
+  graff::Session session("first dive");
 
-  std::string robot_id = "Hexagonal";
-  std::string session_id = "cjz002";
+  json reply;
+  reply = RegisterRobot(ep, robot);
+  reply = RegisterSession(ep, robot, session);
 
+  // add a bunch of nodes a
+  for (int i = 0; i < 6; ++i) {
+    std::string name;
+    name = "x"+std::to_string(i);
+    graff::Pose2 n(name);
+
+    reply = AddNode(ep, session, n);
+
+    // TODO: add odometry factors
+  }
+
+  // add prior on first node
+
+  // Initialize();
+  // AddFactor();
+  // AddNode();
+  // GetNode();
+
+  return (0);
+}
+
+/*
+
+  std::string robot_id = "robot";
+  std::string session_id = "session";
+
+  std::cout << "Registering robot\n";
   if (registerRobot(socket, robot_id)) {
     std::cerr << "Failed to register robot!\n";
     return (-1);
   }
 
+  std::cout << "Registering session\n";
   if (registerSession(socket, session_id)) {
     std::cerr << "Failed to register session!\n";
     return (-1);
   }
 
-  // create odometry chain
-  for (int i = 0; i < 6; ++i) {
 
+  // create odometry chain
+  std::cout << "adding odometry chain\n";
+  for (int i = 0; i < 6; ++i) {
     std::vector<double> measurement = {10.0, 0.0, PI / 3.0};
     std::vector<std::vector<double>> covariance = {
         {0.1, 0.0, 0.1}, {0.1, 0.0, 0.1}, {0.1, 0.0, 0.1}};
@@ -257,7 +289,7 @@ int main(int argCount, char **argValues) {
     // TODO: addOrUpdateDataElement
   }
 
-  // add landmark
+  std::cout << "adding landmark\n";
   addLandmark2D(socket, robot_id, session_id, "l1");
   // add loop closures between {x1, x6} and l1
   addFactor_BearingRangeNormal(socket, robot_id, session_id, "x1", "l1", 0.0,
@@ -274,3 +306,4 @@ int main(int argCount, char **argValues) {
 
   return (0);
 }
+*/

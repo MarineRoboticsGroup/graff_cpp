@@ -1,8 +1,12 @@
 # graff_cpp
 
+[![Build Status](https://travis-ci.org/pvazteixeira/graff_cpp.svg?branch=master)](https://travis-ci.org/pvazteixeira/graff_cpp)
+
 ## Introduction
 
+
 A C++ interface to [GraffSDK](https://github.com/GearsAD/GraffSDK.jl) using JSON over ZeroMQ.
+
 
 Communication with Synchrony is implemented via simple "request-reply"-type functions:
 
@@ -33,8 +37,10 @@ To ensure compatibility, JSON requests must comply with Synchrony-defined entiti
 
  * `build-essential`
  * `cmake` (3.0.2+)
- * ZeroMQ - can be obtained using your package manager via `sudo apt install libzmq-dev`
+ * ZeroMQ - can be obtained using your package manager via `sudo apt install libzmq3-dev`
  * Niels Lohmann's [JSON library](https://github.com/nlohmann/json) - taken care of by the `configure.sh` script
+
+Because of the JSON dependency, Graff requires C++11 support (gcc 4.9+ or clang 3.5+).
 
 ### Build 
 
