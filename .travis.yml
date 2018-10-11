@@ -7,20 +7,25 @@ sudo: false
 matrix:
   include:
     # linux/gcc
-    - os: linux
-      compiler: gcc
-      env: compiler=g++-4.8
-      addons:
-        apt:
-        sources: ['ubuntu-toolchain-r-test']
-        packages: ['g++-4.8', 'ninja-build','libzmq3-dev']
-    # linux/clang
-    - os: linux
-      compiler: clang
-      addons:
-        apt:
+  - os: linux
+    compiler: gcc
+    env: compiler=g++-4.8
+    addons:
+      apt:
+        sources:
+        - ubuntu-toolchain-r-test
         packages:
-          - libzmq3-dev
+        - cmake
+        - libzmq3-dev
+        - g++-4.8
+    # linux/clang
+  - os: linux
+    compiler: clang
+    addons:
+      apt:
+        packages:
+        - cmake
+        - libzmq3-dev
 
 # build script #
 before_install:
