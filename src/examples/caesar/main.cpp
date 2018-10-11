@@ -10,21 +10,30 @@ int main(int argCount, char **argValues) {
   graff::Endpoint ep;
 
   std::cout << "Connecting to endpoint…" << std::endl;
-  ep.Connect("tcp://128.30.31.88:5555");
+  ep.Connect("tcp://127.0.0.1:5555");
+  std::cout << "Connected!" << std::endl;
 
   graff::Robot robot("krakenoid");
   graff::Session session("first dive");
 
   json reply;
   reply = RegisterRobot(ep, robot);
+  std::cout << "Registered robot " << robot.name() << std::endl;
+  if (check(reply)) {
+    std::cout << "success!\n";
+  }
   reply = RegisterSession(ep, robot, session);
+  std::cout << "Registered session " << session.name() << std::endl;
+  if (check(reply)) {
+    std::cout << "success!\n";
+  }
 
   for (int i = 0; i < 6; ++i) {
     std::string name;
     name = "x" + std::to_string(i);
     graff::Pose2 n(name);
 
-    reply = AddNode(ep, session, n); // TODO check if successful
+    reply = AddVariable(ep, session, n); // TODO check if successful
 
     // TODO: add odometry factors
     if (i > 0) {
@@ -46,7 +55,7 @@ int main(int argCount, char **argValues) {
 
   // Initialize();
   // AddFactor();
-  // AddNode();
+  // AddVariable();
   // GetNode();
 
   return (0);

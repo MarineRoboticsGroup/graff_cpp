@@ -24,7 +24,7 @@ void print(const json &reply) {
   }
 }
 inline bool check(const json &reply) {
-  return (reply["status"] == "ok" ? true : false);
+  return (reply["status"] == "OK" ? true : false);
 }
 
 namespace graff {
@@ -196,18 +196,18 @@ class Session : public Element {
 public:
   Session() : Element("session") {}
   Session(const std::string &name) : Element(name) {}
-  void AddNode(const graff::Node &node) { nodes_.push_back(node); };
+  void AddVariable(const graff::Node &node) { nodes_.push_back(node); };
   void AddFactor(const graff::Factor &factor) { factors_.push_back(factor); };
 };
 } // namespace graff
 
-json AddNode(graff::Endpoint &ep, graff::Session s, graff::Node n) {
+json AddVariable(graff::Endpoint &ep, graff::Session s, graff::Node n) {
   json request, reply;
-  request["type"] = "addNode";
+  request["type"] = "addVariable";
   request["node"] = n.ToJson();
   reply = ep.SendRequest(request);
   if (check(reply))
-    s.AddNode(n);
+    s.AddVariable(n);
   return (reply);
 }
 
