@@ -4,9 +4,8 @@
 
 ## Introduction
 
-~~A C++ interface to [SynchronySDK](https://github.com/nicrip/SynchronySDK_py) using JSON over ZeroMQ.~~
 
-A sandbox for the development of the local Graff interface.
+A C++ interface to [GraffSDK](https://github.com/GearsAD/GraffSDK.jl) using JSON over ZeroMQ.
 
 
 Communication with Synchrony is implemented via simple "request-reply"-type functions:
