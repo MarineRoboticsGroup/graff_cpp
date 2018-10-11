@@ -31,9 +31,25 @@ namespace graff {
 
 class Distribution {
 public:
-  json ToJson(void) {
+  virtual json ToJson(void) const {
     json j;
-    return(j);
+    return (j);
+  }
+};
+
+class MvNormal : public Distribution {
+  std::vector<double> mean_;
+  std::vector<std::vector<double>> cov_;
+
+public:
+  MvNormal(const std::vector<double> &mean,
+           const std::vector<std::vector<double>> &cov)
+      : mean_(mean), cov_(cov) {}
+  json ToJson(void) const {
+    json j;
+    j["mean"] = mean_;
+    j["cov"] = cov_;
+    return (j);
   }
 };
 
@@ -96,6 +112,10 @@ public:
   Node(const std::string &name) : Element(name) {}
 };
 
+class Point2 : public Node {
+  double x_, y_;
+};
+
 class Pose2 : public Node {
   double x_, y_, h_;
 
@@ -113,6 +133,14 @@ public:
   }
 };
 
+class Point3 : public Node {
+  double x_, y_, z_;
+};
+
+class Pose3 : public Node {
+  double x_, y_, z_, qw_, qx_, qy_, qz_;
+}
+
 class Factor : public Element {
   graff::Distribution d;
   std::vector<std::string> nodes_;
@@ -120,8 +148,8 @@ class Factor : public Element {
 public:
   Factor() : Element("fx0") {}
   Factor(const std::string &name) : Element(name) {}
-  Factor(const std::string &name, const std::vector<graff::Node> nodes)
-      : Element(name) {}
+  Factor(const std::string &name, const std::vector<std::string> nodes)
+      : Element(name), nodes_(nodes) {}
 
   json ToJson(void) {
     json j;
@@ -131,6 +159,28 @@ public:
     return (j);
   }
 };
+
+class PriorPose2 : public Factor {
+  graff::Distribution meas_;
+};
+
+class Odometry2 : public Factor {
+  graff::Distribution meas_;
+
+  static std::string cat(const std::vector<std::string> &v) {
+    std::string c("f");
+    for (unsigned int i = 0; i < v.size(); ++i) {
+      c += v[i];
+    }
+    return (c);
+  }
+
+public:
+  Odometry2(const std::vector<std::string> &nodes,
+            const graff::Distribution &meas)
+      : Factor(cat(nodes), nodes), meas_(meas) {}
+};
+
 class Robot : public Element {
 public:
   Robot() : Element("robot") {}
@@ -192,4 +242,5 @@ json RegisterSession(graff::Endpoint &ep, graff::Robot robot,
 // update the local estimates
 json UpdateSession(graff::Endpoint &ep, graff::Session &s) {
   json reply;
-  return(reply);}
+  return (reply);
+}
