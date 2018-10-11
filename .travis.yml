@@ -1,0 +1,18 @@
+sudo: false
+language: cpp
+compiler: 
+  - gcc
+  - clang
+addons:
+  apt:
+    packages:
+      - libzmq3-dev
+before_install:
+  - ./configure.sh
+script:
+  - mkdir build
+  - cd build
+  - cmake ..
+  - make
+
+
