@@ -16,8 +16,7 @@ matrix:
         packages: ['g++-4.8', 'ninja-build','libzmq3-dev']
     # linux/clang
     - os: linux
-      compiler: gcc
-      env: compiler=g++-4.8
+      compiler: clang
       addons:
         apt:
         packages:
