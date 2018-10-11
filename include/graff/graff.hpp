@@ -139,7 +139,7 @@ class Point3 : public Node {
 
 class Pose3 : public Node {
   double x_, y_, z_, qw_, qx_, qy_, qz_;
-}
+};
 
 class Factor : public Element {
   graff::Distribution d;
