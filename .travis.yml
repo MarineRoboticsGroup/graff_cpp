@@ -1,14 +1,32 @@
-sudo: false
 language: cpp
-compiler: 
-  - gcc
-  - clang
-addons:
-  apt:
-    packages:
-      - libzmq3-dev
+
+sudo: false
+
+# build matrix #
+
+matrix:
+  include:
+    # linux/gcc
+    - os: linux
+      compiler: gcc
+      env: compiler=g++-4.8
+      addons:
+        apt:
+        sources: ['ubuntu-toolchain-r-test']
+        packages: ['g++-4.8', 'ninja-build','libzmq3-dev']
+    # linux/clang
+    - os: linux
+      compiler: gcc
+      env: compiler=g++-4.8
+      addons:
+        apt:
+        packages:
+          - libzmq3-dev
+
+# build script #
 before_install:
   - ./configure.sh
+
 script:
   - mkdir build
   - cd build

@@ -63,7 +63,7 @@ public:
   // Endpoint(const graff::Endpoint& ep): context_(ep.context_),
   // socket_(ep.socket_) {}
 
-  void Connect(const std::string &address) { socket_.connect(address); }
+  void Connect(const std::string &address) { socket_.connect(address.c_str()); }
 
   void Disconnect(void) {}
 
@@ -190,4 +190,6 @@ json RegisterSession(graff::Endpoint &ep, graff::Robot robot,
 }
 
 // update the local estimates
-json UpdateSession(graff::Endpoint &ep, graff::Session &s) {}
+json UpdateSession(graff::Endpoint &ep, graff::Session &s) {
+  json reply;
+  return(reply);}
