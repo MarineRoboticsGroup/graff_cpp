@@ -6,10 +6,10 @@ sudo: false
 
 matrix:
   include:
-    # linux/gcc
+  # linux/gcc
   - os: linux
     compiler: gcc
-    env: compiler=g++-4.8
+    env: compiler=g++-4.9
     addons:
       apt:
         sources:
@@ -17,8 +17,10 @@ matrix:
         packages:
         - cmake
         - libzmq3-dev
-        - g++-4.8
-    # linux/clang
+        - g++-4.9
+        - ninja-build
+        
+  # linux/clang
   - os: linux
     compiler: clang
     addons:
