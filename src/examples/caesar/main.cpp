@@ -1,4 +1,5 @@
 #include <chrono>
+#include <fstream>
 #include <iostream>
 #include <string>
 #include <thread>
@@ -72,11 +73,14 @@ int main(int argCount, char **argValues) {
                    std::vector<std::string>({"x6", "l1"}), z2);
   reply = AddFactor(ep, session, f2);
 
+  // save session to disk
+  json js = session.ToJson();
+  std::ofstream o("pretty.json");
+  o << std::setw(4) << js << std::endl;
+
   reply = RequestSolve(ep, session);
 
   std::this_thread::sleep_for(std::chrono::seconds(10));
-
-  // get
 
   return (0);
 }

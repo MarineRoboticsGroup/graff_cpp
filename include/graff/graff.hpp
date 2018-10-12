@@ -137,7 +137,6 @@ public:
       : Element(name, type) {}
 };
 
-
 // key class
 class Factor : public Element {
   std::string type_;
@@ -194,12 +193,11 @@ public:
   }
 };
 
-
 class Robot {
   std::string name_;
 
 public:
-  Robot() {}
+  Robot(){}
   Robot(const std::string &name) : name_(name) {}
   std::string name(void) const { return (name_); }
 };
@@ -208,6 +206,10 @@ class Session {
   std::string name_;
   std::vector<graff::Variable> variables_;
   std::vector<graff::Factor> factors_;
+  /*
+   may want to replace variables_ with an std::map to facilitate querying, for
+   instance: Distribution GetKDEMax(endpoint, session, "x0");
+  */
 
 public:
   Session() {}
@@ -217,17 +219,32 @@ public:
   };
   void AddFactor(const graff::Factor &factor) { factors_.push_back(factor); };
   std::string name(void) const { return (name_); }
+
+  json ToJson(void) {
+    json j;
+    j["name"] = name_;
+    for (unsigned int i = 0 ; i<variables_.size(); ++i){
+      j["variables"][variables_[i].name()] = variables_[i].ToJson();
+    }
+    for (unsigned int i = 0 ; i<factors_.size(); ++i){
+      j["factors"][factors_[i].name()] = factors_[i].ToJson();
+    }
+    return (j);
+  }
 };
 } // namespace graff
-
 
 json AddVariable(graff::Endpoint &ep, graff::Session s, graff::Variable v) {
   json request, reply;
   request["type"] = "addVariable";
   request["variable"] = v.ToJson();
   reply = ep.SendRequest(request);
-  if (check(reply))
+  if (check(reply)) {
     s.AddVariable(v);
+  } else {
+    std::cerr << "Request failed!" << std::endl;
+  }
+
   return (reply);
 }
 
@@ -236,8 +253,11 @@ json AddFactor(graff::Endpoint &ep, graff::Session s, graff::Factor f) {
   request["type"] = "addFactor";
   request["factor"] = f.ToJson();
   reply = ep.SendRequest(request);
-  if (check(reply))
+  if (check(reply)) {
     s.AddFactor(f);
+  } else {
+    std::cerr << "Request failed!" << std::endl;
+  }
   return (reply);
 }
 
@@ -271,3 +291,9 @@ json RequestSolve(graff::Endpoint &ep, graff::Session &s) {
   request["type"] = "batchSolve";
   return (ep.SendRequest(request));
 }
+
+void *GetMax(graff::Endpoint &ep, graff::Session &s,
+             const std::string &variable) {}
+
+void *GetKDE(graff::Endpoint &ep, graff::Session &s,
+             const std::string &variable) {}
