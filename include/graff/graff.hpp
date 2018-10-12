@@ -1,3 +1,4 @@
+#include <cassert>
 #include <map>
 #include <string>
 
@@ -31,7 +32,6 @@ void print(const json &reply) {
 inline bool check(const json &reply) {
   return (reply["status"] == "OK" ? true : false);
 }
-
 // end: utility functions
 
 namespace graff {
@@ -46,18 +46,21 @@ public:
   }
 };
 
-class MvNormal : public Distribution {
+class Normal : public Distribution {
   std::vector<double> mean_;
-  std::vector<std::vector<double>> cov_;
+  std::vector<double> cov_;
 
 public:
-  MvNormal(const std::vector<double> &mean,
-           const std::vector<std::vector<double>> &cov)
-      : mean_(mean), cov_(cov) {}
-  // TODO: object from JSON
+  // univariate
+  Normal(const double &mean, const double &cov) : mean_({mean}), cov_({cov}) {}
+  // multivariate
+  Normal(const std::vector<double> &mean, const std::vector<double> &cov)
+      : mean_(mean), cov_(cov) {
+    assert(mean.size() * mean.size() == cov.size());
+  }
   json ToJson(void) const {
     json j;
-    j["type"] = "MvNormal";
+    j["type"] = "Normal";
     j["mean"] = mean_;
     j["cov"] = cov_;
     return (j);
@@ -84,18 +87,21 @@ public:
   }
 };
 
-// base class
+// base class - captures a generic entity/object
 class Element {
   std::string name_;
+  std::string type_;
 
 public:
-  Element(const std::string &name) : name_(name){};
+  Element(const std::string &name, const std::string &type)
+      : name_(name), type_(type){};
   virtual std::string name(void) const { return (name_); }
   virtual void SetName(const std::string &name) { name_ = name; }
   virtual ~Element(){};
   virtual json ToJson(void) {
     json j;
     j["name"] = name_;
+    j["type"] = type_;
     return (j);
   };
 };
@@ -135,62 +141,70 @@ public:
 };
 
 class Variable : public Element {
+  // not really much in here for now...
 public:
-  Variable() : Element("x0") {}
-  Variable(const std::string &name) : Element(name) {}
+  Variable(const std::string &name, const std::string &type)
+      : Element(name, type) {}
 };
 
+/*
 class Point2 : public Variable {
 public:
-  Point2(const std::string &name) : Variable(name) {}
-  json ToJson(void) {
-    json j;
-    j["name"] = name();
-    j["type"] = "Point2";
-    return (j);
-  }
+Point2(const std::string &name) : Variable(name) {}
+json ToJson(void) {
+  json j;
+  j["name"] = name();
+  j["type"] = "Point2";
+  return (j);
+}
 };
 
 class Pose2 : public Variable {
 public:
-  Pose2() : Variable("x0") {}
-  Pose2(const std::string &name) {}
-  json ToJson(void) {
-    json j;
-    j["name"] = name();
-    j["type"] = "Pose2";
-    return (j);
-  }
+Pose2() : Variable("x0") {}
+Pose2(const std::string &name) {}
+json ToJson(void) {
+  json j;
+  j["name"] = name();
+  j["type"] = "Pose2";
+  return (j);
+}
 };
 
 class Point3 : public Variable {
 public:
-  Point3(const std::string &name) : Variable(name) {}
-  json ToJson(void) {
-    json j;
-    j["name"] = name();
-    j["type"] = "Point3";
-    return (j);
-  }
+Point3(const std::string &name) : Variable(name) {}
+json ToJson(void) {
+  json j;
+  j["name"] = name();
+  j["type"] = "Point3";
+  return (j);
+}
 };
 
 class Pose3 : public Variable {
 public:
-  Pose3() : Variable("x0") {}
-  Pose3(const std::string &name) {}
-  json ToJson(void) {
-    json j;
-    j["name"] = name();
-    j["type"] = "Pose3";
-    return (j);
-  }
+Pose3() : Variable("x0") {}
+Pose3(const std::string &name) {}
+json ToJson(void) {
+  json j;
+  j["name"] = name();
+  j["type"] = "Pose3";
+  return (j);
+}
 };
+*/
 
 // key class
 class Factor : public Element {
+  // the type of factor
   std::string type_;
+  // the variables that the factor is conditioned on
   std::vector<std::string> variables_;
-  graff::Distribution distribution_;
+  // a factor can take either a single distribution or one distribution per
+  // measurement axis (e.g. priorpoint2 is a 2dof normal, but a RAE comprises 3
+  // distributions )
+  std::vector<graff::Distribution> distributions_;
 
   static std::string cat(const std::vector<std::string> &v) {
     // this creates a factor label according to the caesar convention
@@ -203,36 +217,40 @@ class Factor : public Element {
   }
 
 public:
-  // TODO: empty
-  // Factor() : Element("fx0") {}
-  // Factor(const std::string &name) : Element(name) {}
-  // single variable
-  // Factor(const std::string &type, const std::string variable,
-  //        const Distribution &distribution)
-  //     : Element(ame), distribution_(distribution) {
-  //   variables_.push_back(variable);
-  // }
+  // single variable, single measurement distribution
   Factor(const std::string &type, const std::string variable,
          const Distribution &distribution)
-      : Element(std::string("f" + variable)), type_(type),
-        distribution_(distribution) {
-    variables_.push_back(variable);
-  }
+      : Element(std::string("f" + variable), type), variables_({variable}),
+        distributions_({distribution}) {}
+  // single variable, multiple measurement distributions
+  Factor(const std::string &type, const std::string variable,
+         const std::vector<Distribution> &distribution)
+      : Element(std::string("f" + variable), type), variables_({variable}),
+        distributions_(distribution) {}
+  // multiple variables, single measurement distribution
   Factor(const std::string &type, const std::vector<std::string> variables,
          const Distribution &distribution)
-      : Element(cat(variables)), type_(type), variables_(variables),
-        distribution_(distribution) {}
+      : Element(cat(variables), type), variables_(variables),
+        distributions_({distribution}) {}
+  // multiple variables, multiple measurement distributions
+  Factor(const std::string &type, const std::vector<std::string> variables,
+         const std::vector<Distribution> &distribution)
+      : Element(cat(variables), type), variables_(variables),
+        distributions_(distribution) {}
 
   virtual json ToJson(void) {
     json j;
     j["name"] = name();
     j["variables"] = variables_; // the variable labels
-    j["measurement"] = distribution_.ToJson();
+    if (distributions_.size() > 1) {
+      for (unsigned int i = 0; i < 0; ++i) {
+        j["measurement"][std::to_string(i)] = distributions_[i].ToJson();
+      }
+    } else {
+      j["measurement"] = distributions_[0].ToJson();
+    }
     return (j);
   }
-
-  std::vector<std::string> Variables(void) const { return (variables_); }
-  graff::Distribution Distribution(void) const { return (distribution_); }
 };
 
 /*
@@ -262,25 +280,30 @@ Odometry2(const std::vector<std::string> &variables,
 };
 */
 
-class Robot : public Element {
+class Robot {
+  std::string name_;
+
 public:
-  Robot() : Element("robot") {}
-  Robot(const std::string &name) : Element(name) {}
+  Robot() {}
+  Robot(const std::string &name) : name_(name) {}
+  std::string name(void) const { return (name_); }
 };
 
-class Session : public Element {
+class Session {
+  std::string name_;
   // TODO: replace with
-  std::map<std::string, graff::Variable> variables2_;
+  // std::map<std::string, graff::Variable> variables2_;
   std::vector<graff::Variable> variables_;
   std::vector<graff::Factor> factors_;
 
 public:
-  Session() : Element("session") {}
-  Session(const std::string &name) : Element(name) {}
+  Session() {}
+  Session(const std::string &name) : name_(name) {}
   void AddVariable(const graff::Variable &variable) {
     variables_.push_back(variable);
   };
   void AddFactor(const graff::Factor &factor) { factors_.push_back(factor); };
+  std::string name(void) const { return (name_); }
 };
 } // namespace graff
 
@@ -325,5 +348,12 @@ json RegisterSession(graff::Endpoint &ep, graff::Robot robot,
 // update the local estimates
 json UpdateSession(graff::Endpoint &ep, graff::Session &s) {
   json reply;
+  // TODO: implementation
   return (reply);
+}
+
+json RequestSolve(graff::Endpoint &ep, graff::Session &s) {
+  json request;
+  request["type"] = "batchSolve";
+  return (ep.SendRequest(request));
 }
