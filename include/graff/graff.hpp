@@ -4,10 +4,15 @@
 #include <zmq.hpp>
 
 #include "json.hpp"
+
+// TODO: matrices become column-major vectors
+// TODO: avoid two-stage packing on distributions
+
 using json = nlohmann::json;
 
 const double PI = 3.141592653589793238463;
 
+// begin: utility functions
 inline std::string toString(const zmq::message_t &reply) {
   return (std::string(static_cast<const char *>(reply.data()), reply.size()));
 }
@@ -27,9 +32,20 @@ inline bool check(const json &reply) {
   return (reply["status"] == "OK" ? true : false);
 }
 
+static std::string cat(const std::vector<std::string> &v) {
+  std::string c("f");
+  for (unsigned int i = 0; i < v.size(); ++i) {
+    c += v[i];
+  }
+  return (c);
+}
+// end: utility functions
+
 namespace graff {
 
 class Distribution {
+  // potentially useful reference:
+  // https://juliastats.github.io/Distributions.jl/latest/univariate.html#Common-Interface-1
 public:
   virtual json ToJson(void) const {
     json j;
@@ -45,11 +61,33 @@ public:
   MvNormal(const std::vector<double> &mean,
            const std::vector<std::vector<double>> &cov)
       : mean_(mean), cov_(cov) {}
+  // TODO: object from JSON
   json ToJson(void) const {
     json j;
+    j["type"] = "MvNormal";
     j["mean"] = mean_;
     j["cov"] = cov_;
     return (j);
+  }
+};
+
+class SampleWeights : public Distribution {
+  std::vector<double> samples_;
+  std::vector<double> weights_;
+
+public:
+  SampleWeights(const std::vector<double> &samples,
+                const std::vector<double> &weights)
+      : samples_(samples), weights_(weights) {}
+  // TODO: object from JSON
+  // SampleWeights(const json &dict)
+  //   : samples_(dict["samples"]), weights_(dict["weights"]) {}
+  json ToJson(void) const {
+    json j;
+    j["type"] = "SampleWeights";
+    j["samples"] = samples_;
+    j["weights"] = weights_;
+    return j;
   }
 };
 
@@ -75,9 +113,6 @@ class Endpoint {
 
 public:
   Endpoint() : context_(1), socket_(context_, ZMQ_REQ) {}
-
-  // Endpoint(const graff::Endpoint& ep): context_(ep.context_),
-  // socket_(ep.socket_) {}
 
   void Connect(const std::string &address) { socket_.connect(address.c_str()); }
 
@@ -106,25 +141,27 @@ public:
   }
 };
 
-class Node : public Element {
+class Variable : public Element {
 public:
-  Node() : Element("x0") {}
-  Node(const std::string &name) : Element(name) {}
+  Variable() : Element("x0") {}
+  Variable(const std::string &name) : Element(name) {}
 };
 
-class Point2 : public Node {
-  double x_, y_;
+class Point2 : public Variable {
+public:
+  Point2(const std::string &name) : Variable(name) {}
+  json ToJson(void) {
+    json j;
+    j["name"] = name();
+    j["type"] = "Point2";
+    return (j);
+  }
 };
 
-class Pose2 : public Node {
-  double x_, y_, h_;
-
+class Pose2 : public Variable {
 public:
-  Pose2() : Node("x0"), x_(0), y_(0), h_(0) {}
-  Pose2(const std::string &name) : Node(name), x_(0), y_(0), h_(0) {}
-  Pose2(const std::string &name, const double &x, const double &y,
-        const double &h)
-      : Node(name), x_(x), y_(y), h_(h){};
+  Pose2() : Variable("x0") {}
+  Pose2(const std::string &name) {}
   json ToJson(void) {
     json j;
     j["name"] = name();
@@ -133,52 +170,61 @@ public:
   }
 };
 
-class Point3 : public Node {
-  double x_, y_, z_;
+class Point3 : public Variable {
+public:
+  Point3(const std::string &name) : Variable(name) {}
+  json ToJson(void) {
+    json j;
+    j["name"] = name();
+    j["type"] = "Point3";
+    return (j);
+  }
 };
 
-class Pose3 : public Node {
-  double x_, y_, z_, qw_, qx_, qy_, qz_;
+class Pose3 : public Variable {
+public:
+  Pose3() : Variable("x0") {}
+  Pose3(const std::string &name) {}
+  json ToJson(void) {
+    json j;
+    j["name"] = name();
+    j["type"] = "Pose3";
+    return (j);
+  }
 };
 
 class Factor : public Element {
   graff::Distribution d;
-  std::vector<std::string> nodes_;
+  std::vector<std::string> variables_;
 
 public:
   Factor() : Element("fx0") {}
   Factor(const std::string &name) : Element(name) {}
-  Factor(const std::string &name, const std::vector<std::string> nodes)
-      : Element(name), nodes_(nodes) {}
+  Factor(const std::string &name, const std::vector<std::string> variables)
+      : Element(name), variables_(variables) {
+    SetName(cat(variables_));
+  }
 
   json ToJson(void) {
     json j;
     j["name"] = name();
-    j["nodes"] = nodes_; // the node labels
+    j["variables"] = variables_; // the variable labels
     j["measurement"] = d.ToJson();
     return (j);
   }
 };
 
-class PriorPose2 : public Factor {
+class PriorPose3 : public Factor {
   graff::Distribution meas_;
 };
 
 class Odometry2 : public Factor {
   graff::Distribution meas_;
 
-  static std::string cat(const std::vector<std::string> &v) {
-    std::string c("f");
-    for (unsigned int i = 0; i < v.size(); ++i) {
-      c += v[i];
-    }
-    return (c);
-  }
-
 public:
-  Odometry2(const std::vector<std::string> &nodes,
+  Odometry2(const std::vector<std::string> &variables,
             const graff::Distribution &meas)
-      : Factor(cat(nodes), nodes), meas_(meas) {}
+      : Factor(cat(variables), variables), meas_(meas) {}
 };
 
 class Robot : public Element {
@@ -189,25 +235,25 @@ public:
 
 class Session : public Element {
   // TODO: replace with
-  std::map<std::string, graff::Node> nodes2_;
-  std::vector<graff::Node> nodes_;
+  std::map<std::string, graff::Variable> variables2_;
+  std::vector<graff::Variable> variables_;
   std::vector<graff::Factor> factors_;
 
 public:
   Session() : Element("session") {}
   Session(const std::string &name) : Element(name) {}
-  void AddVariable(const graff::Node &node) { nodes_.push_back(node); };
+  void AddVariable(const graff::Variable &variable) { variables_.push_back(variable); };
   void AddFactor(const graff::Factor &factor) { factors_.push_back(factor); };
 };
 } // namespace graff
 
-json AddVariable(graff::Endpoint &ep, graff::Session s, graff::Node n) {
+json AddVariable(graff::Endpoint &ep, graff::Session s, graff::Variable v) {
   json request, reply;
   request["type"] = "addVariable";
-  request["node"] = n.ToJson();
+  request["variable"] = v.ToJson();
   reply = ep.SendRequest(request);
   if (check(reply))
-    s.AddVariable(n);
+    s.AddVariable(v);
   return (reply);
 }
 
