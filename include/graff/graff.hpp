@@ -1,16 +1,11 @@
 #include <cassert>
-#include <map>
 #include <string>
 
 #include <zmq.hpp>
 
 #include "json.hpp"
 
-// TODO: matrices become column-major vectors
-// TODO: avoid two-stage packing on distributions
-
 using json = nlohmann::json;
-
 const double PI = 3.141592653589793238463;
 
 // begin: utility functions
@@ -37,8 +32,6 @@ inline bool check(const json &reply) {
 namespace graff {
 
 class Distribution {
-  // potentially useful reference:
-  // https://juliastats.github.io/Distributions.jl/latest/univariate.html#Common-Interface-1
 public:
   virtual json ToJson(void) const {
     json j;
@@ -75,9 +68,6 @@ public:
   SampleWeights(const std::vector<double> &samples,
                 const std::vector<double> &weights)
       : samples_(samples), weights_(weights) {}
-  // TODO: object from JSON
-  // SampleWeights(const json &dict)
-  //   : samples_(dict["samples"]), weights_(dict["weights"]) {}
   json ToJson(void) const {
     json j;
     j["type"] = "SampleWeights";
@@ -147,59 +137,10 @@ public:
       : Element(name, type) {}
 };
 
-/*
-class Point2 : public Variable {
-public:
-Point2(const std::string &name) : Variable(name) {}
-json ToJson(void) {
-  json j;
-  j["name"] = name();
-  j["type"] = "Point2";
-  return (j);
-}
-};
-
-class Pose2 : public Variable {
-public:
-Pose2() : Variable("x0") {}
-Pose2(const std::string &name) {}
-json ToJson(void) {
-  json j;
-  j["name"] = name();
-  j["type"] = "Pose2";
-  return (j);
-}
-};
-
-class Point3 : public Variable {
-public:
-Point3(const std::string &name) : Variable(name) {}
-json ToJson(void) {
-  json j;
-  j["name"] = name();
-  j["type"] = "Point3";
-  return (j);
-}
-};
-
-class Pose3 : public Variable {
-public:
-Pose3() : Variable("x0") {}
-Pose3(const std::string &name) {}
-json ToJson(void) {
-  json j;
-  j["name"] = name();
-  j["type"] = "Pose3";
-  return (j);
-}
-};
-*/
 
 // key class
 class Factor : public Element {
-  // the type of factor
   std::string type_;
-  // the variables that the factor is conditioned on
   std::vector<std::string> variables_;
   // a factor can take either a single distribution or one distribution per
   // measurement axis (e.g. priorpoint2 is a 2dof normal, but a RAE comprises 3
@@ -253,32 +194,6 @@ public:
   }
 };
 
-/*
-class PriorPose3 : public Factor {
-public:
-PriorPose3(const std::string &variable, const graff::Distribution &distribution)
-    : Factor(variable, distribution) {}
-json ToJson(void) {
-  json j;
-  j["name"] = name();
-  j["variables"] = Variables(); // the variable labels
-  j["measurement"] = Distribution().ToJson();
-  j["type"] = "PriorPose3";
-  return (j);
-}
-};
-*/
-
-/*
-class Odometry2 : public Factor {
-graff::Distribution meas_;
-
-public:
-Odometry2(const std::vector<std::string> &variables,
-          const graff::Distribution &meas)
-    : Factor(cat(variables), variables), meas_(meas) {}
-};
-*/
 
 class Robot {
   std::string name_;
@@ -291,8 +206,6 @@ public:
 
 class Session {
   std::string name_;
-  // TODO: replace with
-  // std::map<std::string, graff::Variable> variables2_;
   std::vector<graff::Variable> variables_;
   std::vector<graff::Factor> factors_;
 
@@ -306,6 +219,7 @@ public:
   std::string name(void) const { return (name_); }
 };
 } // namespace graff
+
 
 json AddVariable(graff::Endpoint &ep, graff::Session s, graff::Variable v) {
   json request, reply;
