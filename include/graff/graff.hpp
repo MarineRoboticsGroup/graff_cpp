@@ -32,13 +32,6 @@ inline bool check(const json &reply) {
   return (reply["status"] == "OK" ? true : false);
 }
 
-static std::string cat(const std::vector<std::string> &v) {
-  std::string c("f");
-  for (unsigned int i = 0; i < v.size(); ++i) {
-    c += v[i];
-  }
-  return (c);
-}
 // end: utility functions
 
 namespace graff {
@@ -193,39 +186,81 @@ public:
   }
 };
 
+// key class
 class Factor : public Element {
-  graff::Distribution d;
+  std::string type_;
   std::vector<std::string> variables_;
+  graff::Distribution distribution_;
 
-public:
-  Factor() : Element("fx0") {}
-  Factor(const std::string &name) : Element(name) {}
-  Factor(const std::string &name, const std::vector<std::string> variables)
-      : Element(name), variables_(variables) {
-    SetName(cat(variables_));
+  static std::string cat(const std::vector<std::string> &v) {
+    // this creates a factor label according to the caesar convention
+    // concatenates the variable names, prepending them with an 'f'
+    std::string c("f");
+    for (unsigned int i = 0; i < v.size(); ++i) {
+      c += v[i];
+    }
+    return (c);
   }
 
-  json ToJson(void) {
+public:
+  // TODO: empty
+  // Factor() : Element("fx0") {}
+  // Factor(const std::string &name) : Element(name) {}
+  // single variable
+  // Factor(const std::string &type, const std::string variable,
+  //        const Distribution &distribution)
+  //     : Element(ame), distribution_(distribution) {
+  //   variables_.push_back(variable);
+  // }
+  Factor(const std::string &type, const std::string variable,
+         const Distribution &distribution)
+      : Element(std::string("f" + variable)), type_(type),
+        distribution_(distribution) {
+    variables_.push_back(variable);
+  }
+  Factor(const std::string &type, const std::vector<std::string> variables,
+         const Distribution &distribution)
+      : Element(cat(variables)), type_(type), variables_(variables),
+        distribution_(distribution) {}
+
+  virtual json ToJson(void) {
     json j;
     j["name"] = name();
     j["variables"] = variables_; // the variable labels
-    j["measurement"] = d.ToJson();
+    j["measurement"] = distribution_.ToJson();
     return (j);
   }
+
+  std::vector<std::string> Variables(void) const { return (variables_); }
+  graff::Distribution Distribution(void) const { return (distribution_); }
 };
 
+/*
 class PriorPose3 : public Factor {
-  graff::Distribution meas_;
+public:
+PriorPose3(const std::string &variable, const graff::Distribution &distribution)
+    : Factor(variable, distribution) {}
+json ToJson(void) {
+  json j;
+  j["name"] = name();
+  j["variables"] = Variables(); // the variable labels
+  j["measurement"] = Distribution().ToJson();
+  j["type"] = "PriorPose3";
+  return (j);
+}
 };
+*/
 
+/*
 class Odometry2 : public Factor {
-  graff::Distribution meas_;
+graff::Distribution meas_;
 
 public:
-  Odometry2(const std::vector<std::string> &variables,
-            const graff::Distribution &meas)
-      : Factor(cat(variables), variables), meas_(meas) {}
+Odometry2(const std::vector<std::string> &variables,
+          const graff::Distribution &meas)
+    : Factor(cat(variables), variables), meas_(meas) {}
 };
+*/
 
 class Robot : public Element {
 public:
@@ -242,7 +277,9 @@ class Session : public Element {
 public:
   Session() : Element("session") {}
   Session(const std::string &name) : Element(name) {}
-  void AddVariable(const graff::Variable &variable) { variables_.push_back(variable); };
+  void AddVariable(const graff::Variable &variable) {
+    variables_.push_back(variable);
+  };
   void AddFactor(const graff::Factor &factor) { factors_.push_back(factor); };
 };
 } // namespace graff
