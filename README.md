@@ -47,6 +47,7 @@ Because of the JSON dependency, Graff requires C++11 support (gcc 4.9+ or clang 
 From the repository root:
 
 ```sh
+./configure.sh
 mkdir build
 cd build
 cmake ..
