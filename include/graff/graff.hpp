@@ -293,7 +293,7 @@ json RequestSolve(graff::Endpoint &ep, graff::Session &s) {
 }
 
 void *GetMax(graff::Endpoint &ep, graff::Session &s,
-             const std::string &variable) {}
+             const std::string &variable) {return(NULL);}
 
 void *GetKDE(graff::Endpoint &ep, graff::Session &s,
-             const std::string &variable) {}
+             const std::string &variable) {return(NULL);}

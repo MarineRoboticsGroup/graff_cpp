@@ -1,15 +1,2 @@
-# https://stackoverflow.com/questions/41251474/how-to-import-zeromq-libraries-in-cmake#41252437
-find_package(PkgConfig)
-## use pkg-config to get hints for 0mq locations
-pkg_check_modules(PC_ZeroMQ QUIET zmq)
-find_path(ZeroMQ_INCLUDE_DIR
-        NAMES zmq.hpp
-        PATHS ${PC_ZeroMQ_INCLUDE_DIRS}
-        )
-      
-
-add_executable(caesar_example main.cpp)
-## add the include directory to our compile directives
-target_include_directories(caesar_example PUBLIC ${ZeroMQ_INCLUDE_DIR})
-## add the 0mq library to our link directive
-target_link_libraries(caesar_example PUBLIC ${ZeroMQ_LIBRARY})
+add_subdirectory(hexagonal)
+add_subdirectory(pose3)
