@@ -55,14 +55,15 @@ int main(int argCount, char **argValues) {
 
       // add ZPR prior
       std::vector<double> mean = {0.0, 0.0, 0.0};
-      std::vector<double> var = {0.0001, 0.0, 0.0,  0.0, 0.0001, 0.0, 0.0, 0.0, 0.0001};
+      std::vector<double> var = {0.0001, 0.0, 0.0, 0.0,   0.0001,
+                                 0.0,    0.0, 0.0, 0.0001};
       graff::Normal z_zpr(mean, var);
       graff::Factor zpr("Pose3PriorZPR", label, z_zpr);
       reply = AddFactor(ep, session, zpr);
 
       // add odometry (XYH measurement)
       std::string prev_label = "x" + std::to_string(idx - 1);
-      var = {0.01,0.0, 0.0,  0.0, 0.01,0.0, 0.0, 0.0,  0.0001};
+      var = {0.01, 0.0, 0.0, 0.0, 0.01, 0.0, 0.0, 0.0, 0.0001};
       if (0 == j) {
         mean = {0.0, 0.0, 0.0}; // dive
       } else {
@@ -75,8 +76,8 @@ int main(int argCount, char **argValues) {
 
       // add range measurements
       int point_id(0);
-      for (double z = -1.0; z <= 1.0; z = +0.2) {
-        for (double y = -1.0; y <= 1.0; y = +0.2) {
+      for (double z = -1.0; z <= 1.0; z += 0.2) {
+        for (double y = -1.0; y <= 1.0; y += 0.2) {
           std::string pt =
               "p" + std::to_string(idx) + "_" + std::to_string(point_id);
           graff::Variable point(pt, "Point3");
@@ -92,6 +93,7 @@ int main(int argCount, char **argValues) {
           graff::Factor range_measurement("RangeAzimuthElevation", {label, pt},
                                           {z_r, z_az, z_r});
           reply = AddFactor(ep, session, range_measurement);
+          point_id++;
         }
       }
     }

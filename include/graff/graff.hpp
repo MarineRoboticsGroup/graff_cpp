@@ -90,7 +90,7 @@ public:
   virtual ~Element(){};
   virtual json ToJson(void) {
     json j;
-    j["name"] = name_;
+    j["label"] = name_;
     j["type"] = type_;
     return (j);
   };
@@ -180,7 +180,7 @@ public:
 
   virtual json ToJson(void) {
     json j;
-    j["name"] = name();
+    j["label"] = name();
     j["variables"] = variables_; // the variable labels
     if (distributions_.size() > 1) {
       for (unsigned int i = 0; i < 0; ++i) {
@@ -243,6 +243,9 @@ json AddVariable(graff::Endpoint &ep, graff::Session s, graff::Variable v) {
     s.AddVariable(v);
   } else {
     std::cerr << "Request failed!" << std::endl;
+    std::cerr << "Request contents:\n";
+    std::cerr << request;
+    std::cerr << "\n\n\n" << std::endl;
   }
 
   return (reply);
