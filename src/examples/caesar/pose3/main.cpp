@@ -14,6 +14,8 @@ int main(int argCount, char **argValues) {
   ep.Connect("tcp://127.0.0.1:5555");
   std::cout << "connected!" << std::endl;
 
+  ToggleMockMode(ep);
+
   graff::Robot robot("krakenoid3000");
   graff::Session session("first dive");
 
@@ -53,14 +55,14 @@ int main(int argCount, char **argValues) {
 
       // add ZPR prior
       std::vector<double> mean = {0.0, 0.0, 0.0};
-      std::vector<double> var = {0.0001, 0.0001, 0.0001};
+      std::vector<double> var = {0.0001, 0.0, 0.0,  0.0, 0.0001, 0.0, 0.0, 0.0, 0.0001};
       graff::Normal z_zpr(mean, var);
       graff::Factor zpr("Pose3PriorZPR", label, z_zpr);
       reply = AddFactor(ep, session, zpr);
 
       // add odometry (XYH measurement)
       std::string prev_label = "x" + std::to_string(idx - 1);
-      var = {0.01, 0.01, 0.0001};
+      var = {0.01,0.0, 0.0,  0.0, 0.01,0.0, 0.0, 0.0,  0.0001};
       if (0 == j) {
         mean = {0.0, 0.0, 0.0}; // dive
       } else {
@@ -71,8 +73,27 @@ int main(int argCount, char **argValues) {
                              z_xyh);
       reply = AddFactor(ep, session, odometry);
 
-      // TODO: add range measurements
+      // add range measurements
+      int point_id(0);
+      for (double z = -1.0; z <= 1.0; z = +0.2) {
+        for (double y = -1.0; y <= 1.0; y = +0.2) {
+          std::string pt =
+              "p" + std::to_string(idx) + "_" + std::to_string(point_id);
+          graff::Variable point(pt, "Point3");
+          reply = AddVariable(ep, session, point);
 
+          double az, el, r;
+          az = atan2(y, 5.0);
+          el = atan2(z, sqrt(pow(5.0, 2) + pow(y, 2)));
+          r = sqrt(pow(5.0, 2) + pow(y, 2) + pow(z, 2));
+          graff::Normal z_az(az, 0.0001);
+          graff::Normal z_el(el, 0.0001);
+          graff::Normal z_r(r, 0.01);
+          graff::Factor range_measurement("RangeAzimuthElevation", {label, pt},
+                                          {z_r, z_az, z_r});
+          reply = AddFactor(ep, session, range_measurement);
+        }
+      }
     }
   }
 
@@ -81,9 +102,15 @@ int main(int argCount, char **argValues) {
   std::ofstream o("pretty.json");
   o << std::setw(4) << js << std::endl;
 
+  // set ready
   reply = RequestSolve(ep, session);
 
   std::this_thread::sleep_for(std::chrono::seconds(10));
+
+  // get val
+
+  // we're done here.
+  RequestShutdown(ep);
 
   return (0);
 }

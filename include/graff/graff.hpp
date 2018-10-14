@@ -197,7 +197,7 @@ class Robot {
   std::string name_;
 
 public:
-  Robot(){}
+  Robot() {}
   Robot(const std::string &name) : name_(name) {}
   std::string name(void) const { return (name_); }
 };
@@ -223,10 +223,10 @@ public:
   json ToJson(void) {
     json j;
     j["name"] = name_;
-    for (unsigned int i = 0 ; i<variables_.size(); ++i){
+    for (unsigned int i = 0; i < variables_.size(); ++i) {
       j["variables"][variables_[i].name()] = variables_[i].ToJson();
     }
-    for (unsigned int i = 0 ; i<factors_.size(); ++i){
+    for (unsigned int i = 0; i < factors_.size(); ++i) {
       j["factors"][factors_[i].name()] = factors_[i].ToJson();
     }
     return (j);
@@ -292,8 +292,45 @@ json RequestSolve(graff::Endpoint &ep, graff::Session &s) {
   return (ep.SendRequest(request));
 }
 
-void *GetMax(graff::Endpoint &ep, graff::Session &s,
-             const std::string &variable) {return(NULL);}
+json GetVarMAPKDE(graff::Endpoint &ep, graff::Session &s,
+                   const std::string &variable) {
+  json request;
+  request["type"] = "GetVarMAPKDE";
+  request["variable"] = variable;
+  return (ep.SendRequest(request));
+}
 
-void *GetKDE(graff::Endpoint &ep, graff::Session &s,
-             const std::string &variable) {return(NULL);}
+json GetVarMAPMax(graff::Endpoint &ep, graff::Session &s,
+                   const std::string &variable) {
+  json request;
+  request["type"] = "GetVarMAPMax";
+  request["variable"] = variable;
+  return (ep.SendRequest(request));
+}
+
+json GetVarMAPMean(graff::Endpoint &ep, graff::Session &s,
+                    const std::string &variable) {
+  json request;
+  request["type"] = "GetVarMAPMean";
+  request["variable"] = variable;
+  return (ep.SendRequest(request));
+}
+
+json RequestShutdown(graff::Endpoint &ep) {
+  json request;
+  request["type"] = "shutdown";
+  return (ep.SendRequest(request));
+}
+
+json ToggleMockMode(graff::Endpoint &ep) {
+  json request;
+  request["type"] = "toggleMockServer";
+  return (ep.SendRequest(request));
+}
+
+json GetVarsByTag(graff::Endpoint &ep, const std::string &tag) {
+  json request;
+  request["type"] = "varQuery";
+  request["tag"] = tag;
+  return (ep.SendRequest(request));
+}
