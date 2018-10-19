@@ -343,10 +343,24 @@ json GetVarsByTag(graff::Endpoint &ep, const std::string &tag) {
 /**
  *
  */
-json ls(graff::Endpoint &ep) {
+json ListVariables(graff::Endpoint &ep) {
   json request;
   request["type"] = "ls";
+  request["variables"] = true;
+  request["factors"] = false;
   return (ep.SendRequest(request));
 }
 
-// TODO: ls()
+/**
+ *
+ */
+json ListFactors(graff::Endpoint &ep) {
+  json request;
+  request["type"] = "ls";
+  request["variables"] = false;
+  request["factors"] = true;
+  return (ep.SendRequest(request));
+}
+
+// TODO: ls
+// TODO: plot commands/triggers
