@@ -68,14 +68,14 @@ int main(int argCount, char **argValues) {
       if (0 == j) {
         mean = {0.0, 0.0, 0.0}; // dive
       } else {
-        mean = {0.0, direction * 10.0, 0.0}; // move sideways
+        mean = {0.0, direction * 1.0, 0.0}; // move sideways
       }
       graff::Normal z_xyh(mean, var);
       graff::Factor odometry("Pose3Pose3PartialXYH", {prev_label, label},
                              z_xyh);
       reply = AddFactor(ep, session, odometry);
 
-      // add range measurements
+      // add range measurements (121 total)
       int point_id(0);
       for (double z = -1.0; z <= 1.0; z += 0.2) {
         for (double y = -1.0; y <= 1.0; y += 0.2) {
@@ -97,6 +97,13 @@ int main(int argCount, char **argValues) {
           point_id++;
         }
       }
+
+      // add a match constraint
+      graff::Normal z_match({0.0, 0.0, 0.0},
+                            {0.01, 0.0, 0.0, 0.0, 0.01, 0.0, 0.0, 0.0, .01});
+      std::string pt_a = "p" + std::to_string(idx-1) + "_60";
+      std::string pt_b = "p" + std::to_string(idx) + "_55";
+      graff::Factor match("Point3Point3", {pt_a, pt_b}, {z_match});
     }
   }
 
