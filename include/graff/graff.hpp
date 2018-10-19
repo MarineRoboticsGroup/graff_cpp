@@ -31,6 +31,10 @@ inline bool check(const json &reply) {
 
 namespace graff {
 
+/*! \class Distribution graff.hpp
+ *  \brief A class to model a generic distribution object.
+ *
+ */
 class Distribution {
 public:
   virtual json ToJson(void) const {
@@ -39,18 +43,34 @@ public:
   }
 };
 
+/*!
+ * \class Normal graff.hpp
+ * \brief A class to handle a uni- or multi-variate normal distribution.
+ */
 class Normal : public Distribution {
-  std::vector<double> mean_;
-  std::vector<double> cov_;
+  std::vector<double> mean_; /*!< mean vector */
+  std::vector<double> cov_;  /*!< covariance matrix, in column-major order */
 
 public:
-  // univariate
-  Normal(const double &mean, const double &cov) : mean_({mean}), cov_({cov}) {}
-  // multivariate
+  /*!
+   * \brief Constructor for a univariate normal
+   * \param [in] mean Mean
+   * \param [in] var Variance
+   */
+  Normal(const double &mean, const double &var) : mean_({mean}), cov_({var}) {}
+
+  /*!
+   * \brief Constructor for a multivariate normal
+   * \param [in] mean Mean vector
+   * \param [in] var Covariance matrix, in column-major order.
+   */
   Normal(const std::vector<double> &mean, const std::vector<double> &cov)
       : mean_(mean), cov_(cov) {
     assert(mean.size() * mean.size() == cov.size());
   }
+  /*! \brief Encode the distribution as a JSON object.
+   *  \return The JSON-encoded distribution object.
+   */
   json ToJson(void) const {
     json j;
     j["distType"] = "Normal";
@@ -60,18 +80,35 @@ public:
   }
 };
 
+/*!
+ * \class SampleWeights
+ * \brief An empirical univariate distribution defined by a set of samples and
+ * associated weights.
+ */
 class SampleWeights : public Distribution {
   std::vector<double> samples_;
   std::vector<double> weights_;
   double quantile_;
 
 public:
+  /*! \brief
+   * \param [in] samples  A vector of samples
+   * \param [in] weights  A vector of weights (associated 1-to-1 with the
+   * samples)
+   * \param [in] quantile A value specifying the lower quantile of
+   * samples to be discarded (setting this to zero forces all samples to be
+   * considered).
+   */
   SampleWeights(const std::vector<double> &samples,
                 const std::vector<double> &weights, const double &quantile)
       : samples_(samples), weights_(weights), quantile_(quantile) {}
+
+  /*! \brief Encode the distribution as a JSON object.
+   *  \return The JSON-encoded distribution object.
+   */
   json ToJson(void) const {
     json j;
-    j["distType"] = "SampleWeights";
+    j["distType"] = "SampleWeights"; // maybe AliasingScalarSampler?
     j["samples"] = samples_;
     j["weights"] = weights_;
     j["quantile"] = quantile_;
@@ -98,6 +135,10 @@ public:
   };
 };
 
+/*!
+ * @class Endpoint
+ * @brief The main class to handle connections to the Caesar endpoint.
+ */
 class Endpoint {
   zmq::context_t context_;
   zmq::socket_t socket_;
@@ -132,6 +173,10 @@ public:
   }
 };
 
+/*!
+ * @class
+ * @brief
+ */
 class Variable : public Element {
   // not really much in here for now...
 public:
@@ -139,7 +184,10 @@ public:
       : Element(name, type) {}
 };
 
-// key class
+/*!
+ * @class
+ * @brief
+ */
 class Factor : public Element {
   std::string type_;
   std::vector<std::string> variables_;
@@ -192,6 +240,10 @@ public:
   }
 };
 
+/*!
+ * @class
+ * @brief
+ */
 class Robot {
   std::string name_;
 
@@ -201,6 +253,10 @@ public:
   std::string name(void) const { return (name_); }
 };
 
+/*!
+ * @class
+ * @brief
+ */
 class Session {
   std::string name_;
   std::vector<graff::Variable> variables_;
@@ -233,6 +289,14 @@ public:
 };
 } // namespace graff
 
+/**
+ * \brief Add a variable to the current session's factor graph.
+ *
+ * \param [in] ep The endpoint object.
+ * \param [in] s The session object
+ * \param [in] v The variable object.
+ * \return The endpoint reply as a json object.
+ */
 json AddVariable(graff::Endpoint &ep, graff::Session s, graff::Variable v) {
   json request, reply;
   request["type"] = "addVariable";
@@ -250,10 +314,19 @@ json AddVariable(graff::Endpoint &ep, graff::Session s, graff::Variable v) {
   return (reply);
 }
 
+/**
+ * \brief Add a factor to the current session's factor graph.
+ *
+ * \param [in] ep The endpoint object.
+ * \param [in] s The session object
+ * \param [in] f The factor object.
+ * \return The endpoint reply as a json object.
+ */
 json AddFactor(graff::Endpoint &ep, graff::Session s, graff::Factor f) {
   json request, reply;
   request["type"] = "addFactor";
   request["factor"] = f.ToJson();
+  // request["factor"]["factorType"] will contain the actual factor type
   reply = ep.SendRequest(request);
   if (check(reply)) {
     s.AddFactor(f);
