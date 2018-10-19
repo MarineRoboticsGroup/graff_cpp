@@ -39,6 +39,7 @@ int main(int argCount, char **argValues) {
   std::vector<double> cov = {0.01, 0.0, 0.0, 0.0, 0.01, 0.0, 0.0, 0.0, 0.01};
   graff::Normal p0(mean, cov);
   graff::Factor prior0("PriorPose2", "x0", p0);
+
   reply = AddFactor(ep, session, prior0);
 
   // vertical lawn-mower, each leg is at constant depth

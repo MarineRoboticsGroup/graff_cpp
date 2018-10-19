@@ -8,7 +8,7 @@
 using json = nlohmann::json;
 const double PI = 3.141592653589793238463;
 
-// begin: utility functions
+// BEGIN: utility functions
 inline std::string toString(const zmq::message_t &reply) {
   return (std::string(static_cast<const char *>(reply.data()), reply.size()));
 }
@@ -53,7 +53,7 @@ public:
   }
   json ToJson(void) const {
     json j;
-    j["type"] = "Normal";
+    j["distType"] = "Normal";
     j["mean"] = mean_;
     j["cov"] = cov_;
     return (j);
@@ -63,16 +63,18 @@ public:
 class SampleWeights : public Distribution {
   std::vector<double> samples_;
   std::vector<double> weights_;
+  double quantile_;
 
 public:
   SampleWeights(const std::vector<double> &samples,
-                const std::vector<double> &weights)
-      : samples_(samples), weights_(weights) {}
+                const std::vector<double> &weights, const double &quantile)
+      : samples_(samples), weights_(weights), quantile_(quantile) {}
   json ToJson(void) const {
     json j;
-    j["type"] = "SampleWeights";
+    j["distType"] = "SampleWeights";
     j["samples"] = samples_;
     j["weights"] = weights_;
+    j["quantile"] = quantile_;
     return j;
   }
 };
@@ -180,14 +182,11 @@ public:
 
   virtual json ToJson(void) {
     json j;
-    j["label"] = name();
+    j["factorType"] = type_;
+    j["label"] = name(); // unneeded, as we get the label from the backend
     j["variables"] = variables_; // the variable labels
-    if (distributions_.size() > 1) {
-      for (unsigned int i = 0; i < 0; ++i) {
-        j["measurement"][std::to_string(i)] = distributions_[i].ToJson();
-      }
-    } else {
-      j["measurement"] = distributions_[0].ToJson();
+    for (unsigned int i = 0; i < 0; ++i) {
+      j["measurement"][std::to_string(i)] = distributions_[i].ToJson();
     }
     return (j);
   }
@@ -260,6 +259,9 @@ json AddFactor(graff::Endpoint &ep, graff::Session s, graff::Factor f) {
     s.AddFactor(f);
   } else {
     std::cerr << "Request failed!" << std::endl;
+    std::cerr << "Request contents:\n";
+    std::cerr << request;
+    std::cerr << "\n\n\n" << std::endl;
   }
   return (reply);
 }
@@ -296,7 +298,7 @@ json RequestSolve(graff::Endpoint &ep, graff::Session &s) {
 }
 
 json GetVarMAPKDE(graff::Endpoint &ep, graff::Session &s,
-                   const std::string &variable) {
+                  const std::string &variable) {
   json request;
   request["type"] = "GetVarMAPKDE";
   request["variable"] = variable;
@@ -304,7 +306,7 @@ json GetVarMAPKDE(graff::Endpoint &ep, graff::Session &s,
 }
 
 json GetVarMAPMax(graff::Endpoint &ep, graff::Session &s,
-                   const std::string &variable) {
+                  const std::string &variable) {
   json request;
   request["type"] = "GetVarMAPMax";
   request["variable"] = variable;
@@ -312,7 +314,7 @@ json GetVarMAPMax(graff::Endpoint &ep, graff::Session &s,
 }
 
 json GetVarMAPMean(graff::Endpoint &ep, graff::Session &s,
-                    const std::string &variable) {
+                   const std::string &variable) {
   json request;
   request["type"] = "GetVarMAPMean";
   request["variable"] = variable;
@@ -337,3 +339,14 @@ json GetVarsByTag(graff::Endpoint &ep, const std::string &tag) {
   request["tag"] = tag;
   return (ep.SendRequest(request));
 }
+
+/**
+ *
+ */
+json ls(graff::Endpoint &ep) {
+  json request;
+  request["type"] = "ls";
+  return (ep.SendRequest(request));
+}
+
+// TODO: ls()
