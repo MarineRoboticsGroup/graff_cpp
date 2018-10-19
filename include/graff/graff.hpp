@@ -287,7 +287,6 @@ public:
     return (j);
   }
 };
-} // namespace graff
 
 /**
  * \brief Add a variable to the current session's factor graph.
@@ -297,7 +296,7 @@ public:
  * \param [in] v The variable object.
  * \return The endpoint reply as a json object.
  */
-json AddVariable(graff::Endpoint &ep, graff::Session s, graff::Variable v) {
+json AddVariable(Endpoint &ep, Session s, Variable v) {
   json request, reply;
   request["type"] = "addVariable";
   request["variable"] = v.ToJson();
@@ -322,7 +321,7 @@ json AddVariable(graff::Endpoint &ep, graff::Session s, graff::Variable v) {
  * \param [in] f The factor object.
  * \return The endpoint reply as a json object.
  */
-json AddFactor(graff::Endpoint &ep, graff::Session s, graff::Factor f) {
+json AddFactor(Endpoint &ep, Session s, Factor f) {
   json request, reply;
   request["type"] = "addFactor";
   request["factor"] = f.ToJson();
@@ -341,15 +340,15 @@ json AddFactor(graff::Endpoint &ep, graff::Session s, graff::Factor f) {
 
 // TODO: revise to comply with GSG (arguments are value, const ref, or
 // pointers!)
-json RegisterRobot(graff::Endpoint &ep, graff::Robot robot) {
+json RegisterRobot(Endpoint &ep, Robot robot) {
   json request, reply;
   request["type"] = "registerRobot";
   request["robot"] = robot.name();
   return (ep.SendRequest(request));
 }
 
-json RegisterSession(graff::Endpoint &ep, graff::Robot robot,
-                     graff::Session session) {
+json RegisterSession(Endpoint &ep, Robot robot,
+                     Session session) {
   json request, reply;
   request["type"] = "registerSession";
   request["robot"] = robot.name();
@@ -358,19 +357,19 @@ json RegisterSession(graff::Endpoint &ep, graff::Robot robot,
 }
 
 // update the local estimates
-json UpdateSession(graff::Endpoint &ep, graff::Session &s) {
+json UpdateSession(Endpoint &ep, Session &s) {
   json reply;
   // TODO: implementation
   return (reply);
 }
 
-json RequestSolve(graff::Endpoint &ep, graff::Session &s) {
+json RequestSolve(Endpoint &ep, Session &s) {
   json request;
   request["type"] = "batchSolve";
   return (ep.SendRequest(request));
 }
 
-json GetVarMAPKDE(graff::Endpoint &ep, graff::Session &s,
+json GetVarMAPKDE(Endpoint &ep, Session &s,
                   const std::string &variable) {
   json request;
   request["type"] = "GetVarMAPKDE";
@@ -378,7 +377,7 @@ json GetVarMAPKDE(graff::Endpoint &ep, graff::Session &s,
   return (ep.SendRequest(request));
 }
 
-json GetVarMAPMax(graff::Endpoint &ep, graff::Session &s,
+json GetVarMAPMax(Endpoint &ep, Session &s,
                   const std::string &variable) {
   json request;
   request["type"] = "GetVarMAPMax";
@@ -386,7 +385,7 @@ json GetVarMAPMax(graff::Endpoint &ep, graff::Session &s,
   return (ep.SendRequest(request));
 }
 
-json GetVarMAPMean(graff::Endpoint &ep, graff::Session &s,
+json GetVarMAPMean(Endpoint &ep, Session &s,
                    const std::string &variable) {
   json request;
   request["type"] = "GetVarMAPMean";
@@ -394,19 +393,19 @@ json GetVarMAPMean(graff::Endpoint &ep, graff::Session &s,
   return (ep.SendRequest(request));
 }
 
-json RequestShutdown(graff::Endpoint &ep) {
+json RequestShutdown(Endpoint &ep) {
   json request;
   request["type"] = "shutdown";
   return (ep.SendRequest(request));
 }
 
-json ToggleMockMode(graff::Endpoint &ep) {
+json ToggleMockMode(Endpoint &ep) {
   json request;
   request["type"] = "toggleMockServer";
   return (ep.SendRequest(request));
 }
 
-json GetVarsByTag(graff::Endpoint &ep, const std::string &tag) {
+json GetVarsByTag(Endpoint &ep, const std::string &tag) {
   json request;
   request["type"] = "varQuery";
   request["tag"] = tag;
@@ -416,7 +415,7 @@ json GetVarsByTag(graff::Endpoint &ep, const std::string &tag) {
 /**
  *
  */
-json ListVariables(graff::Endpoint &ep) {
+json ListVariables(Endpoint &ep) {
   json request;
   request["type"] = "ls";
   request["variables"] = true;
@@ -427,7 +426,7 @@ json ListVariables(graff::Endpoint &ep) {
 /**
  *
  */
-json ListFactors(graff::Endpoint &ep) {
+json ListFactors(Endpoint &ep) {
   json request;
   request["type"] = "ls";
   request["variables"] = false;
@@ -437,3 +436,5 @@ json ListFactors(graff::Endpoint &ep) {
 
 // TODO: ls
 // TODO: plot commands/triggers
+
+} // namespace graff

@@ -14,19 +14,19 @@ int main(int argCount, char **argValues) {
   ep.Connect("tcp://127.0.0.1:5555");
   std::cout << "connected!" << std::endl;
 
-  ToggleMockMode(ep);
+  ToggleMockMode(ep); // not sure it is working.
 
   graff::Robot robot("krakenoid3000");
   graff::Session session("first dive");
 
   json reply;
   std::cout << "Registering robot " << robot.name();
-  reply = RegisterRobot(ep, robot);
+  reply = graff::RegisterRobot(ep, robot);
   if (check(reply)) {
     std::cout << " - success!\n";
   }
   std::cout << "Registering session " << session.name();
-  reply = RegisterSession(ep, robot, session);
+  reply = graff::RegisterSession(ep, robot, session);
   if (check(reply)) {
     std::cout << " - success!\n";
   }
@@ -34,13 +34,13 @@ int main(int argCount, char **argValues) {
   double direction(1.0), depth(0.0);
 
   graff::Variable pose("x0", "Pose3");
-  reply = AddVariable(ep, session, pose);
+  reply = graff::AddVariable(ep, session, pose);
   std::vector<double> mean = {0.0, 0.0, 0.0};
   std::vector<double> cov = {0.01, 0.0, 0.0, 0.0, 0.01, 0.0, 0.0, 0.0, 0.01};
   graff::Normal p0(mean, cov);
   graff::Factor prior0("PriorPose2", "x0", p0);
 
-  reply = AddFactor(ep, session, prior0);
+  reply = graff::AddFactor(ep, session, prior0);
 
   // vertical lawn-mower, each leg is at constant depth
   for (int i = 0; i < 3; ++i) {
@@ -52,7 +52,7 @@ int main(int argCount, char **argValues) {
       // add pose
       std::string label = "x" + std::to_string(idx);
       graff::Variable pose(label, "Pose3");
-      reply = AddVariable(ep, session, pose);
+      reply = graff::AddVariable(ep, session, pose);
 
       // add ZPR prior
       std::vector<double> mean = {0.0, 0.0, 0.0};
@@ -60,7 +60,7 @@ int main(int argCount, char **argValues) {
                                  0.0,    0.0, 0.0, 0.0001};
       graff::Normal z_zpr(mean, var);
       graff::Factor zpr("Pose3PriorZPR", label, z_zpr);
-      reply = AddFactor(ep, session, zpr);
+      reply = graff::AddFactor(ep, session, zpr);
 
       // add odometry (XYH measurement)
       std::string prev_label = "x" + std::to_string(idx - 1);
@@ -73,7 +73,7 @@ int main(int argCount, char **argValues) {
       graff::Normal z_xyh(mean, var);
       graff::Factor odometry("Pose3Pose3PartialXYH", {prev_label, label},
                              z_xyh);
-      reply = AddFactor(ep, session, odometry);
+      reply = graff::AddFactor(ep, session, odometry);
 
       // add range measurements (121 total)
       int point_id(0);
@@ -82,7 +82,7 @@ int main(int argCount, char **argValues) {
           std::string pt =
               "p" + std::to_string(idx) + "_" + std::to_string(point_id);
           graff::Variable point(pt, "Point3");
-          reply = AddVariable(ep, session, point);
+          reply = graff::AddVariable(ep, session, point);
 
           double az, el, r;
           az = atan2(y, 5.0);
@@ -93,7 +93,7 @@ int main(int argCount, char **argValues) {
           graff::Normal z_r(r, 0.01);
           graff::Factor range_measurement("RangeAzimuthElevation", {label, pt},
                                           {z_r, z_az, z_r});
-          reply = AddFactor(ep, session, range_measurement);
+          reply = graff::AddFactor(ep, session, range_measurement);
           point_id++;
         }
       }
