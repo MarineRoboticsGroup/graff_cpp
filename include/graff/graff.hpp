@@ -158,7 +158,7 @@ public:
     socket_.send(request_msg);
 
     json reply;
-    if (socket_.recv(&reply_msg) < 0) {
+    if (!socket_.recv(&reply_msg)) {
       std::cerr << "Something went wrong: " << toString(reply_msg) << "\n";
     } else {
       reply = json::parse(toString(reply_msg));
@@ -185,8 +185,8 @@ public:
 };
 
 /*!
- * @class
- * @brief
+ * \class
+ * \brief
  */
 class Factor : public Element {
   std::string type_;
@@ -231,10 +231,11 @@ public:
   virtual json ToJson(void) {
     json j;
     j["factorType"] = type_;
-    j["label"] = name(); // unneeded, as we get the label from the backend
-    j["variables"] = variables_; // the variable labels
-    for (unsigned int i = 0; i < 0; ++i) {
-      j["measurement"][std::to_string(i)] = distributions_[i].ToJson();
+    // j["label"] = name(); // unneeded, as we get the label from the backend
+    j["factor"]["variables"] = variables_; // the variable labels
+    for (unsigned int i = 0; i < distributions_.size(); ++i) {
+      j["factor"]["measurement"][std::to_string(i)] =
+          distributions_[i].ToJson();
     }
     return (j);
   }
@@ -324,7 +325,7 @@ json AddVariable(Endpoint &ep, Session s, Variable v) {
 json AddFactor(Endpoint &ep, Session s, Factor f) {
   json request, reply;
   request["type"] = "addFactor";
-  request["factor"] = f.ToJson();
+  request["factorRequest"] = f.ToJson();
   // request["factor"]["factorType"] will contain the actual factor type
   reply = ep.SendRequest(request);
   if (check(reply)) {
