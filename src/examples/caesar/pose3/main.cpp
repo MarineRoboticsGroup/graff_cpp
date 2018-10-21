@@ -20,7 +20,7 @@ int main(int argCount, char **argValues) {
   graff::Session session("first dive");
 
   json reply;
-  std::cout << "Registering robot " << robot.name();
+  std::cout << "Registering robot " << robot.Name();
   reply = graff::RegisterRobot(ep, robot);
   if (check(reply)) {
     std::cout << " - success!\n";
@@ -35,11 +35,12 @@ int main(int argCount, char **argValues) {
 
   graff::Variable pose("x0", "Pose3");
   reply = graff::AddVariable(ep, session, pose);
+
   std::vector<double> mean = {0.0, 0.0, 0.0};
   std::vector<double> cov = {0.01, 0.0, 0.0, 0.0, 0.01, 0.0, 0.0, 0.0, 0.01};
-  graff::Normal p0(mean, cov);
-  graff::Factor prior0("PriorPose2", "x0", p0);
-
+  graff::Normal *p0 = new graff::Normal(mean, cov);
+  graff::Factor prior0("Prior", "x0");
+  prior0.push_back(p0);
   reply = graff::AddFactor(ep, session, prior0);
 
   // vertical lawn-mower, each leg is at constant depth
@@ -58,8 +59,9 @@ int main(int argCount, char **argValues) {
       std::vector<double> mean = {0.0, 0.0, 0.0};
       std::vector<double> var = {0.0001, 0.0, 0.0, 0.0,   0.0001,
                                  0.0,    0.0, 0.0, 0.0001};
-      graff::Normal z_zpr(mean, var);
-      graff::Factor zpr("Pose3PriorZPR", label, z_zpr);
+      graff::Normal *z_zpr = new graff::Normal(mean, var);
+      graff::Factor zpr("Pose3PriorZPR", label);
+      zpr.push_back(z_zpr);
       reply = graff::AddFactor(ep, session, zpr);
 
       // add odometry (XYH measurement)
@@ -70,9 +72,9 @@ int main(int argCount, char **argValues) {
       } else {
         mean = {0.0, direction * 1.0, 0.0}; // move sideways
       }
-      graff::Normal z_xyh(mean, var);
-      graff::Factor odometry("Pose3Pose3PartialXYH", {prev_label, label},
-                             z_xyh);
+      graff::Normal *z_xyh = new graff::Normal(mean, var);
+      graff::Factor odometry("Pose3Pose3PartialXYH", {prev_label, label});
+      odometry.push_back(z_xyh);
       reply = graff::AddFactor(ep, session, odometry);
 
       // add range measurements (121 total)
@@ -88,22 +90,24 @@ int main(int argCount, char **argValues) {
           az = atan2(y, 5.0);
           el = atan2(z, sqrt(pow(5.0, 2) + pow(y, 2)));
           r = sqrt(pow(5.0, 2) + pow(y, 2) + pow(z, 2));
-          graff::Normal z_az(az, 0.0001);
-          graff::Normal z_el(el, 0.0001);
-          graff::Normal z_r(r, 0.01);
-          graff::Factor range_measurement("RangeAzimuthElevation", {label, pt},
-                                          {z_r, z_az, z_r});
+          graff::Normal *z_az = new graff::Normal(az, 0.0001);
+          graff::Normal *z_el = new graff::Normal(el, 0.0001);
+          graff::Normal *z_r = new graff::Normal(r, 0.01);
+          graff::Factor range_measurement("RangeAzimuthElevation", {label, pt});
+          range_measurement.push_back({z_r, z_az, z_el});
           reply = graff::AddFactor(ep, session, range_measurement);
           point_id++;
         }
       }
 
       // add a match constraint
-      graff::Normal z_match({0.0, 0.0, 0.0},
-                            {0.01, 0.0, 0.0, 0.0, 0.01, 0.0, 0.0, 0.0, .01});
-      std::string pt_a = "p" + std::to_string(idx-1) + "_60";
+      graff::Normal *z_match = new graff::Normal(
+          {0.0, 0.0, 0.0}, {0.01, 0.0, 0.0, 0.0, 0.01, 0.0, 0.0, 0.0, .01});
+      std::string pt_a = "p" + std::to_string(idx - 1) + "_60";
       std::string pt_b = "p" + std::to_string(idx) + "_55";
-      graff::Factor match("Point3Point3", {pt_a, pt_b}, {z_match});
+      graff::Factor match("Point3Point3", {pt_a, pt_b});
+      match.push_back(z_match);
+      reply = graff::AddFactor(ep, session, match);
     }
   }
 
@@ -117,7 +121,7 @@ int main(int argCount, char **argValues) {
 
   std::this_thread::sleep_for(std::chrono::seconds(10));
 
-  // get val
+  // TODO: get estimates back
 
   // we're done here.
   RequestShutdown(ep);

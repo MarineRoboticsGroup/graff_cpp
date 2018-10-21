@@ -18,7 +18,7 @@ int main(int argCount, char **argValues) {
   graff::Session session("first dive");
 
   json reply;
-  std::cout << "Registering robot " << robot.name();
+  std::cout << "Registering robot " << robot.Name();
   reply = graff::RegisterRobot(ep, robot);
   if (check(reply)) {
     std::cout << " - success!\n";
@@ -39,9 +39,10 @@ int main(int argCount, char **argValues) {
       std::vector<double> mu = {10.0, 0.0, PI / 3.0};
       std::vector<double> sig = {0.01, 0.0, 0.0, 0.0, 0.01,
                                  0.0,  0.0, 0.0, 0.01};
-      graff::Normal z(mu, sig);
+      graff::Normal *z = new graff::Normal(mu, sig);
       std::vector<std::string> nodes = {prev_idx, idx};
-      graff::Factor odometry("Pose2Pose2", nodes, z);
+      graff::Factor odometry("Pose2Pose2", nodes);
+      odometry.push_back(z); // measurement
       reply = graff::AddFactor(ep, session, odometry);
     }
   }
@@ -49,8 +50,10 @@ int main(int argCount, char **argValues) {
   // add prior on first node
   std::vector<double> mean = {0.0, 0.0, 0.0};
   std::vector<double> cov = {0.01, 0.0, 0.0, 0.0, 0.01, 0.0, 0.0, 0.0, 0.01};
-  graff::Normal p0(mean, cov);
-  graff::Factor prior0("PriorPose2", "x0", p0);
+  graff::Normal *p0 = new graff::Normal(mean, cov);
+  graff::Factor prior0("Prior"); //, "x0", p0);
+  prior0.push_back("x0");
+  prior0.push_back(p0);
   reply = graff::AddFactor(ep, session, prior0);
 
   // add landmark
@@ -58,24 +61,26 @@ int main(int argCount, char **argValues) {
   graff::AddVariable(ep, session, l1);
 
   // add first landmark observation
-  graff::Normal zb1(0, 0.1);
-  graff::Normal zr1(10, 1.0);
-  std::vector<graff::Distribution> z1 = {zb1, zr1};
+  graff::Normal *zb1 = new graff::Normal(0, 0.1);
+  graff::Normal *zr1 = new graff::Normal(10, 1.0);
   graff::Factor f1("Pose2Point2BearingRange",
-                   std::vector<std::string>({"x0", "l1"}), z1);
+                   std::vector<std::string>({"x0", "l1"}));
+  f1.push_back(zb1);
+  f1.push_back(zr1);
   reply = graff::AddFactor(ep, session, f1);
 
   // add second landmark observation
-  graff::Normal zb2(0, 0.1);
-  graff::Normal zr2(20, 1.0);
-  std::vector<graff::Distribution> z2 = {zb2, zr2};
+  graff::Normal *zb2 = new graff::Normal(0, 0.1);
+  graff::Normal *zr2 = new graff::Normal(20, 1.0);
   graff::Factor f2("Pose2Point2BearingRange",
-                   std::vector<std::string>({"x6", "l1"}), z2);
+                   std::vector<std::string>({"x6", "l1"}));
+  f2.push_back(zb2);
+  f2.push_back(zr2);
   reply = graff::AddFactor(ep, session, f2);
 
   // save session to disk
   json js = session.ToJson();
-  std::ofstream o("pretty.json");
+  std::ofstream o("hexagonal.json");
   o << std::setw(4) << js << std::endl;
 
   reply = graff::RequestSolve(ep, session);

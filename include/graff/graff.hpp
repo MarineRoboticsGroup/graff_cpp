@@ -34,13 +34,12 @@ namespace graff {
 /*! \class Distribution graff.hpp
  *  \brief A class to model a generic distribution object.
  *
+ * See also: visitor pattern
+ *
  */
 class Distribution {
 public:
-  virtual json ToJson(void) const {
-    json j;
-    return (j);
-  }
+  virtual json ToJson(void) const = 0;
 };
 
 /*!
@@ -71,7 +70,7 @@ public:
   /*! \brief Encode the distribution as a JSON object.
    *  \return The JSON-encoded distribution object.
    */
-  json ToJson(void) const {
+  json ToJson(void) const override {
     json j;
     j["distType"] = "Normal";
     j["mean"] = mean_;
@@ -106,7 +105,7 @@ public:
   /*! \brief Encode the distribution as a JSON object.
    *  \return The JSON-encoded distribution object.
    */
-  json ToJson(void) const {
+  json ToJson(void) const override {
     json j;
     j["distType"] = "SampleWeights"; // maybe AliasingScalarSampler?
     j["samples"] = samples_;
@@ -125,9 +124,10 @@ public:
   Element(const std::string &name, const std::string &type)
       : name_(name), type_(type){};
   virtual std::string name(void) const { return (name_); }
+  virtual std::string Type(void) const { return (type_); }
   virtual void SetName(const std::string &name) { name_ = name; }
   virtual ~Element(){};
-  virtual json ToJson(void) {
+  virtual json ToJson(void) const {
     json j;
     j["label"] = name_;
     j["type"] = type_;
@@ -182,6 +182,14 @@ class Variable : public Element {
 public:
   Variable(const std::string &name, const std::string &type)
       : Element(name, type) {}
+  json ToJson(void) const {
+    json j;
+    j["label"] = name();
+    j["variableType"] = Type();
+    j["N"] = 0;
+    j["labels"] = {""};
+    return (j);
+  }
 };
 
 /*!
@@ -189,12 +197,12 @@ public:
  * \brief
  */
 class Factor : public Element {
-  std::string type_;
+  // std::string type_;
   std::vector<std::string> variables_;
   // a factor can take either a single distribution or one distribution per
   // measurement axis (e.g. priorpoint2 is a 2dof normal, but a RAE comprises 3
   // distributions )
-  std::vector<graff::Distribution> distributions_;
+  std::vector<graff::Distribution *> distribution_ptrs_;
 
   static std::string cat(const std::vector<std::string> &v) {
     // this creates a factor label according to the caesar convention
@@ -207,35 +215,54 @@ class Factor : public Element {
   }
 
 public:
-  // single variable, single measurement distribution
+  Factor(const std::string &type) : Element("", type) {}
+  Factor(const std::string &type, const std::string &variable)
+      : Element("", type), variables_({variable}) {}
+  Factor(const std::string &type, const std::vector<std::string> &variables)
+      : Element("", type), variables_(variables) {}
+  /*
   Factor(const std::string &type, const std::string variable,
-         const Distribution &distribution)
+         Distribution *distribution_ptr)
       : Element(std::string("f" + variable), type), variables_({variable}),
-        distributions_({distribution}) {}
+        distribution_ptrs_({distribution_ptr}) {}
   // single variable, multiple measurement distributions
   Factor(const std::string &type, const std::string variable,
-         const std::vector<Distribution> &distribution)
+         std::vector<Distribution *> distribution_ptrs)
       : Element(std::string("f" + variable), type), variables_({variable}),
-        distributions_(distribution) {}
+        distribution_ptrs_(distribution_ptrs) {}
   // multiple variables, single measurement distribution
   Factor(const std::string &type, const std::vector<std::string> variables,
-         const Distribution &distribution)
+         Distribution *&distribution_ptr)
       : Element(cat(variables), type), variables_(variables),
-        distributions_({distribution}) {}
+        distribution_ptrs_({distribution_ptr}) {}
   // multiple variables, multiple measurement distributions
   Factor(const std::string &type, const std::vector<std::string> variables,
-         const std::vector<Distribution> &distribution)
+         std::vector<Distribution *> &distribution_ptrs)
       : Element(cat(variables), type), variables_(variables),
-        distributions_(distribution) {}
+        distribution_ptrs_(distribution_ptrs) {}
+  */
 
-  virtual json ToJson(void) {
+  void push_back(const std::string &variable) {
+    variables_.push_back(variable);
+  }
+
+  void push_back(Distribution *distribution) {
+    distribution_ptrs_.push_back(distribution);
+  }
+
+  void push_back(std::vector<Distribution *> distributions) {
+    for (Distribution *ptr : distributions) {
+      distribution_ptrs_.push_back(ptr);
+    }
+  }
+
+  virtual json ToJson(void) const {
     json j;
-    j["factorType"] = type_;
+    j["factorType"] = Type();
     // j["label"] = name(); // unneeded, as we get the label from the backend
-    j["factor"]["variables"] = variables_; // the variable labels
-    for (unsigned int i = 0; i < distributions_.size(); ++i) {
-      j["factor"]["measurement"][std::to_string(i)] =
-          distributions_[i].ToJson();
+    j["variables"] = variables_; // the variable labels
+    for (unsigned int i = 0; i < distribution_ptrs_.size(); ++i) {
+      j["factor"]["measurement"].emplace_back(distribution_ptrs_[i]->ToJson());
     }
     return (j);
   }
@@ -247,16 +274,26 @@ public:
  */
 class Robot {
   std::string name_;
+  std::string description_;
 
 public:
   Robot() {}
   Robot(const std::string &name) : name_(name) {}
-  std::string name(void) const { return (name_); }
+  Robot(const std::string &name, const std::string &description)
+      : name_(name), description_(description) {}
+  std::string Name(void) const { return (name_); }
+  std::string Description(void) const { return (description_); }
+  json ToJson(void) const {
+    json j;
+    j["name"] = name_;
+    j["description"] = description_;
+    return (j);
+  }
 };
 
 /*!
- * @class
- * @brief
+ * \class
+ * \brief
  */
 class Session {
   std::string name_;
@@ -309,6 +346,9 @@ json AddVariable(Endpoint &ep, Session s, Variable v) {
     std::cerr << "Request contents:\n";
     std::cerr << request;
     std::cerr << "\n\n\n" << std::endl;
+    std::cerr << "Reply contents:\n";
+    std::cerr << reply;
+    std::cerr << "\n\n\n" << std::endl;
   }
 
   return (reply);
@@ -335,6 +375,9 @@ json AddFactor(Endpoint &ep, Session s, Factor f) {
     std::cerr << "Request contents:\n";
     std::cerr << request;
     std::cerr << "\n\n\n" << std::endl;
+    std::cerr << "Reply contents:\n";
+    std::cerr << reply;
+    std::cerr << "\n\n\n" << std::endl;
   }
   return (reply);
 }
@@ -344,15 +387,14 @@ json AddFactor(Endpoint &ep, Session s, Factor f) {
 json RegisterRobot(Endpoint &ep, Robot robot) {
   json request, reply;
   request["type"] = "registerRobot";
-  request["robot"] = robot.name();
+  request["robot"] = robot.Name();
   return (ep.SendRequest(request));
 }
 
-json RegisterSession(Endpoint &ep, Robot robot,
-                     Session session) {
+json RegisterSession(Endpoint &ep, Robot robot, Session session) {
   json request, reply;
   request["type"] = "registerSession";
-  request["robot"] = robot.name();
+  request["robot"] = robot.Name();
   request["session"] = session.name();
   return (ep.SendRequest(request));
 }
@@ -370,24 +412,21 @@ json RequestSolve(Endpoint &ep, Session &s) {
   return (ep.SendRequest(request));
 }
 
-json GetVarMAPKDE(Endpoint &ep, Session &s,
-                  const std::string &variable) {
+json GetVarMAPKDE(Endpoint &ep, Session &s, const std::string &variable) {
   json request;
   request["type"] = "GetVarMAPKDE";
   request["variable"] = variable;
   return (ep.SendRequest(request));
 }
 
-json GetVarMAPMax(Endpoint &ep, Session &s,
-                  const std::string &variable) {
+json GetVarMAPMax(Endpoint &ep, Session &s, const std::string &variable) {
   json request;
   request["type"] = "GetVarMAPMax";
   request["variable"] = variable;
   return (ep.SendRequest(request));
 }
 
-json GetVarMAPMean(Endpoint &ep, Session &s,
-                   const std::string &variable) {
+json GetVarMAPMean(Endpoint &ep, Session &s, const std::string &variable) {
   json request;
   request["type"] = "GetVarMAPMean";
   request["variable"] = variable;
@@ -400,12 +439,23 @@ json RequestShutdown(Endpoint &ep) {
   return (ep.SendRequest(request));
 }
 
+/**
+ * \brief Toggle endpoint "mock mode"
+ * In mock mode, the endpoint will acknowledge all requests, but instead of
+fulfilling them, it will simply print their contents.
+ * \param [in] ep The endpoint object
+ */
 json ToggleMockMode(Endpoint &ep) {
   json request;
   request["type"] = "toggleMockServer";
   return (ep.SendRequest(request));
 }
 
+/**
+ * \brief Request a list of all variables in the current session with the
+ * specified tag.
+ * \param [in] ep The endpoint object.
+ */
 json GetVarsByTag(Endpoint &ep, const std::string &tag) {
   json request;
   request["type"] = "varQuery";
@@ -414,7 +464,8 @@ json GetVarsByTag(Endpoint &ep, const std::string &tag) {
 }
 
 /**
- *
+ * \brief Request a list of all variables in the current session.
+ * \param [in] ep The endpoint object.
  */
 json ListVariables(Endpoint &ep) {
   json request;
@@ -425,7 +476,8 @@ json ListVariables(Endpoint &ep) {
 }
 
 /**
- *
+ * \brief Request a list of all factors in the current session.
+ * \param [in] ep The endpoint object.
  */
 json ListFactors(Endpoint &ep) {
   json request;
@@ -435,7 +487,6 @@ json ListFactors(Endpoint &ep) {
   return (ep.SendRequest(request));
 }
 
-// TODO: ls
 // TODO: plot commands/triggers
 
 } // namespace graff
