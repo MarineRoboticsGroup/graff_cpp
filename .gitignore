@@ -64,3 +64,5 @@ build
 
 # third-party library
 include/json.hpp
+
+docs/html/

@@ -60,7 +60,7 @@ int main(int argCount, char **argValues) {
       std::vector<double> var = {0.0001, 0.0, 0.0, 0.0,   0.0001,
                                  0.0,    0.0, 0.0, 0.0001};
       graff::Normal *z_zpr = new graff::Normal(mean, var);
-      graff::Factor zpr("Pose3PriorZPR", label);
+      graff::Factor zpr("PartialPriorRollPitchZ", label);
       zpr.push_back(z_zpr);
       reply = graff::AddFactor(ep, session, zpr);
 
@@ -73,7 +73,7 @@ int main(int argCount, char **argValues) {
         mean = {0.0, direction * 1.0, 0.0}; // move sideways
       }
       graff::Normal *z_xyh = new graff::Normal(mean, var);
-      graff::Factor odometry("Pose3Pose3PartialXYH", {prev_label, label});
+      graff::Factor odometry("PartialPose3XYYaw", {prev_label, label});
       odometry.push_back(z_xyh);
       reply = graff::AddFactor(ep, session, odometry);
 
