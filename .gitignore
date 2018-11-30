@@ -61,6 +61,7 @@ dkms.conf
 
 # 
 build
+pod-build
 
 # third-party library
 include/json.hpp
