@@ -72,7 +72,7 @@ public:
    */
   json ToJson(void) const override {
     json j;
-    j["distType"] = "Normal";
+    j["distType"] = "MvNormal";
     j["mean"] = mean_;
     j["cov"] = cov_;
     return (j);
@@ -336,8 +336,8 @@ public:
  */
 json AddVariable(Endpoint &ep, Session s, Variable v) {
   json request, reply;
-  request["type"] = "addVariable";
-  request["variable"] = v.ToJson();
+  request["request"] = "addVariable";
+  request["payload"] = v.ToJson();
   reply = ep.SendRequest(request);
   if (check(reply)) {
     s.AddVariable(v);
@@ -364,8 +364,8 @@ json AddVariable(Endpoint &ep, Session s, Variable v) {
  */
 json AddFactor(Endpoint &ep, Session s, Factor f) {
   json request, reply;
-  request["type"] = "addFactor";
-  request["factorRequest"] = f.ToJson();
+  request["request"] = "addFactor";
+  request["payload"] = f.ToJson();
   // request["factor"]["factorType"] will contain the actual factor type
   reply = ep.SendRequest(request);
   if (check(reply)) {
@@ -374,10 +374,10 @@ json AddFactor(Endpoint &ep, Session s, Factor f) {
     std::cerr << "Request failed!" << std::endl;
     std::cerr << "Request contents:\n";
     std::cerr << request;
-    std::cerr << "\n\n\n" << std::endl;
+    std::cerr << "\n\n" << std::endl;
     std::cerr << "Reply contents:\n";
     std::cerr << reply;
-    std::cerr << "\n\n\n" << std::endl;
+    std::cerr << "\n\n" << std::endl;
   }
   return (reply);
 }
@@ -386,16 +386,16 @@ json AddFactor(Endpoint &ep, Session s, Factor f) {
 // pointers!)
 json RegisterRobot(Endpoint &ep, Robot robot) {
   json request, reply;
-  request["type"] = "registerRobot";
-  request["robot"] = robot.Name();
+  request["request"] = "registerRobot";
+  request["payload"]["robot"] = robot.Name();
   return (ep.SendRequest(request));
 }
 
 json RegisterSession(Endpoint &ep, Robot robot, Session session) {
   json request, reply;
-  request["type"] = "registerSession";
-  request["robot"] = robot.Name();
-  request["session"] = session.name();
+  request["request"] = "registerSession";
+  request["payload"]["robot"] = robot.Name();
+  request["payload"]["session"] = session.name();
   return (ep.SendRequest(request));
 }
 
@@ -408,7 +408,8 @@ json UpdateSession(Endpoint &ep, Session &s) {
 
 json RequestSolve(Endpoint &ep, Session &s) {
   json request;
-  request["type"] = "batchSolve";
+  request["request"] = "batchSolve";
+  request["payload"] = "";
   return (ep.SendRequest(request));
 }
 
