@@ -7,14 +7,13 @@ find_path(ZeroMQ_INCLUDE_DIR
         PATHS ${PC_ZeroMQ_INCLUDE_DIRS}
         )
 
-## use the hint from about to find the location of libzmq
 find_library(ZeroMQ_LIBRARY
         NAMES zmq
         PATHS ${PC_ZeroMQ_LIBRARY_DIRS}
         )
 
-add_executable(hexagonal_example main.cpp)
+add_executable(caesar_hexagonal main.cpp)
 ## add the include directory to our compile directives
-target_include_directories(hexagonal_example PUBLIC ${ZeroMQ_INCLUDE_DIR})
+target_include_directories(caesar_hexagonal PUBLIC ${ZeroMQ_INCLUDE_DIR})
 ## add the 0mq library to our link directive
-target_link_libraries(hexagonal_example PUBLIC ${ZeroMQ_LIBRARY})
+target_link_libraries(caesar_hexagonal PUBLIC ${ZeroMQ_LIBRARY})
