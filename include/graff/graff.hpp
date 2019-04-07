@@ -415,28 +415,29 @@ json RequestSolve(Endpoint &ep, Session &s) {
 
 json GetVarMAPKDE(Endpoint &ep, Session &s, const std::string &variable) {
   json request;
-  request["type"] = "GetVarMAPKDE";
-  request["variable"] = variable;
+  request["request"] = "GetVarMAPKDE";
+  request["payload"] = variable;
   return (ep.SendRequest(request));
 }
 
 json GetVarMAPMax(Endpoint &ep, Session &s, const std::string &variable) {
   json request;
-  request["type"] = "GetVarMAPMax";
-  request["variable"] = variable;
+  request["request"] = "GetVarMAPMax";
+  request["payload"] = variable;
   return (ep.SendRequest(request));
 }
 
 json GetVarMAPMean(Endpoint &ep, Session &s, const std::string &variable) {
   json request;
-  request["type"] = "GetVarMAPMean";
-  request["variable"] = variable;
+  request["request"] = "GetVarMAPMean";
+  request["payload"] = variable;
   return (ep.SendRequest(request));
 }
 
 json RequestShutdown(Endpoint &ep) {
   json request;
-  request["type"] = "shutdown";
+  request["request"] = "shutdown";
+  request["payload"] = "";
   return (ep.SendRequest(request));
 }
 
@@ -446,9 +447,10 @@ json RequestShutdown(Endpoint &ep) {
 fulfilling them, it will simply print their contents.
  * \param [in] ep The endpoint object
  */
-json ToggleMockMode(Endpoint &ep) {
+json ToggleMockMode(Endpoint &ep, bool &mock = true) {
   json request;
-  request["type"] = "toggleMockServer";
+  request["request"] = "toggleMockServer";
+  request["payload"] = mock;
   return (ep.SendRequest(request));
 }
 
@@ -459,8 +461,8 @@ json ToggleMockMode(Endpoint &ep) {
  */
 json GetVarsByTag(Endpoint &ep, const std::string &tag) {
   json request;
-  request["type"] = "varQuery";
-  request["tag"] = tag;
+  request["request"] = "varQuery";
+  request["payload"] = "tag";
   return (ep.SendRequest(request));
 }
 
@@ -470,9 +472,8 @@ json GetVarsByTag(Endpoint &ep, const std::string &tag) {
  */
 json ListVariables(Endpoint &ep) {
   json request;
-  request["type"] = "ls";
-  request["variables"] = true;
-  request["factors"] = false;
+  request["request"] = "ls";
+  request["payload"] = "variables";
   return (ep.SendRequest(request));
 }
 
@@ -482,9 +483,8 @@ json ListVariables(Endpoint &ep) {
  */
 json ListFactors(Endpoint &ep) {
   json request;
-  request["type"] = "ls";
-  request["variables"] = false;
-  request["factors"] = true;
+  request["request"] = "ls";
+  request["payload"] = "factors";
   return (ep.SendRequest(request));
 }
 
