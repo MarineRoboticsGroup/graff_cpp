@@ -18,4 +18,4 @@ pods_install_pkg_config_file(${LIBRARY_NAME}
   LIBS -l${LIBRARY_NAME}
 VERSION 0.0.1)
 
-add_subdirectory(src)
+# add_subdirectory(src)

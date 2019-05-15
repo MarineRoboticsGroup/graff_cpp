@@ -3,7 +3,7 @@
 
 #include <zmq.hpp>
 
-#include "json.hpp"
+#include <thirdparty/json.hpp>
 
 using json = nlohmann::json;
 const double PI = 3.141592653589793238463;
@@ -130,7 +130,7 @@ public:
   virtual json ToJson(void) const {
     json j;
     j["label"] = name_;
-    j["type"] = type_;
+    j["request"] = type_;
     return (j);
   };
 };
@@ -168,7 +168,8 @@ public:
 
   json Status(void) {
     json request;
-    request["type"] = "getStatus";
+    request["request"] = "getStatus";
+    request["payload"] = "";
     return (SendRequest(request));
   }
 };
@@ -415,28 +416,29 @@ json RequestSolve(Endpoint &ep, Session &s) {
 
 json GetVarMAPKDE(Endpoint &ep, Session &s, const std::string &variable) {
   json request;
-  request["type"] = "GetVarMAPKDE";
-  request["variable"] = variable;
+  request["request"] = "GetVarMAPKDE";
+  request["payload"] = variable;
   return (ep.SendRequest(request));
 }
 
 json GetVarMAPMax(Endpoint &ep, Session &s, const std::string &variable) {
   json request;
-  request["type"] = "GetVarMAPMax";
-  request["variable"] = variable;
+  request["request"] = "GetVarMAPMax";
+  request["payload"] = variable;
   return (ep.SendRequest(request));
 }
 
 json GetVarMAPMean(Endpoint &ep, Session &s, const std::string &variable) {
   json request;
-  request["type"] = "GetVarMAPMean";
-  request["variable"] = variable;
+  request["request"] = "GetVarMAPMean";
+  request["payload"] = variable;
   return (ep.SendRequest(request));
 }
 
 json RequestShutdown(Endpoint &ep) {
   json request;
-  request["type"] = "shutdown";
+  request["request"] = "shutdown";
+  request["payload"] = "";
   return (ep.SendRequest(request));
 }
 
@@ -448,7 +450,8 @@ fulfilling them, it will simply print their contents.
  */
 json ToggleMockMode(Endpoint &ep) {
   json request;
-  request["type"] = "toggleMockServer";
+  request["request"] = "toggleMockServer";
+  request["payload"] = "";
   return (ep.SendRequest(request));
 }
 
@@ -459,8 +462,8 @@ json ToggleMockMode(Endpoint &ep) {
  */
 json GetVarsByTag(Endpoint &ep, const std::string &tag) {
   json request;
-  request["type"] = "varQuery";
-  request["tag"] = tag;
+  request["request"] = "varQuery";
+  request["payload"] = tag;
   return (ep.SendRequest(request));
 }
 
@@ -470,9 +473,9 @@ json GetVarsByTag(Endpoint &ep, const std::string &tag) {
  */
 json ListVariables(Endpoint &ep) {
   json request;
-  request["type"] = "ls";
-  request["variables"] = true;
-  request["factors"] = false;
+  request["request"] = "ls";
+  request["payload"]["variables"] = true;
+  request["payload"]["factors"] = false;
   return (ep.SendRequest(request));
 }
 
@@ -482,9 +485,9 @@ json ListVariables(Endpoint &ep) {
  */
 json ListFactors(Endpoint &ep) {
   json request;
-  request["type"] = "ls";
-  request["variables"] = false;
-  request["factors"] = true;
+  request["request"] = "ls";
+  request["payload"]["variables"] = false;
+  request["payload"]["factors"] = true;
   return (ep.SendRequest(request));
 }
 
